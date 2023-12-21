@@ -1,0 +1,6 @@
+*.o
+exec
+hello
+*.tab.c
+*.tab.h
+*.yy.c
