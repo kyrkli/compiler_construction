@@ -7,18 +7,23 @@ void yyerror(const char* msg){
 	fprintf(stderr, "%s\n", msg);
 }
 
-typedef enum {
-	_char = 0,
-	_int,
-	_float,
-	_double
-} Types;
-
 %}
 %define parse.error verbose
+
+%code requires {
+typedef enum {
+    _char = 0,
+    _int,
+    _float,
+    _double
+} Types_t;
+
+}
+
+
 %union {
 	int num;
-	Types type;
+	Types_t type;
 	char* id;
 }
 %start S
@@ -27,30 +32,30 @@ typedef enum {
 %token <num> num 
 		<id> id
 		<type> type
+		<id> newline
 //non-terminals
 
 %right '='
 %left '-' '+'  
 %left '*' '/'
 %right '^'
-
+%type <num> NEXT DECLARE TERM
 %%
 S : S NEXT
   | %empty
 
 NEXT: DECLARE
-	| DECLARE '=' TERM
+	| DECLARE '=' {printf("after declare =\n");} TERM { printf("term = %d\n", $4); }
 	//next functionality
 
-DECLARE: type '-' '>' id '\n' { printf("DECLARE parses\n"); } 
+DECLARE: type '-' '>' id newline { printf("DECLARE parsed type = %d id = %s\n", $1, $4); } 
 
 TERM: TERM '-' TERM
 	| TERM '+' TERM
 	| TERM '*' TERM
 	| TERM '/' TERM
 	| TERM '^' TERM
-	| num { }
-	| id { /*variables*/ }
+	| num { printf("num = %d\n", $1); }
 
 
 %%

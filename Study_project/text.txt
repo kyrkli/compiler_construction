@@ -1,11 +1,2 @@
-->199
-octopus->107 @@ octopus number 107
-hex->Af123
-int->id->asd123
-int->id->assig0
-=1010 
-+ octopus->70 
-+ hex->ff
-
-
-
+int->abc123
+=octopus->10
