@@ -1,6 +1,8 @@
 %{
 //includes
 #include <stdio.h>
+#include <math.h>
+
 
 int yylex(void);
 void yyerror(const char* msg){
@@ -24,15 +26,15 @@ typedef enum {
 %union {
 	int num;
 	Types_t type;
-	char* id;
+	char* str;
 }
 %start S
 
 //terminals
 %token <num> num 
-		<id> id
+		<str> id
 		<type> type
-		<id> newline
+		<str> newline
 //non-terminals
 
 %right '='
@@ -45,17 +47,17 @@ S : S NEXT
   | %empty
 
 NEXT: DECLARE
-	| DECLARE '=' {printf("after declare =\n");} TERM { printf("term = %d\n", $4); }
+	| DECLARE '=' TERM { setvar(); } 
 	//next functionality
 
-DECLARE: type '-' '>' id newline { printf("DECLARE parsed type = %d id = %s\n", $1, $4); } 
+DECLARE: type '-' '>' id newline {  } 
 
-TERM: TERM '-' TERM
-	| TERM '+' TERM
-	| TERM '*' TERM
-	| TERM '/' TERM
-	| TERM '^' TERM
-	| num { printf("num = %d\n", $1); }
+TERM: TERM '-' TERM { $$ = $1 - $3; }
+	| TERM '+' TERM { $$ = $1 + $3; }
+	| TERM '*' TERM { $$ = $1 * $3; }
+	| TERM '/' TERM { $$ = $1 / $3; }
+	| TERM '^' TERM { $$ = pow($1, $3); }
+	| num { $$ = $1; }
 
 
 %%
