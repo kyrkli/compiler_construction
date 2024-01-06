@@ -42,6 +42,7 @@ void  s_push(stack_t *s, stackval_t el);
 stackval_t s_pop (stack_t *s);
 int s_isempty(stack_t *s);
 void free_stack(stack_t *s);
+void print_gdata(node_t* node);
 void show_stack(stack_t *s);
 
 stackval_t* s_peek(stack_t *s);

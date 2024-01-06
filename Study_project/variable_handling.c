@@ -28,55 +28,59 @@ static stackval_t *var_lookup (char *id, int border) {
 	return NULL;
 }
 
-value_t var_declare_global (type_t type, char *id, value_t gval) {
+value_t var_declare_global (type_t type, char *id, void* gval) {
   stackval_t *s = var_lookup (id, 0);
   if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
     s->gval = gval;
   } else {
+	//TODO gval = strdup(gval) in case of pointer
     s_push(&globals, (stackval_t) { .type = type, .gval = gval, .id = strdup(id) });
   }
 
   return gval;
 }
 
-value_t var_declare (type_t type, char *id, value_t gval) {
+value_t var_declare (type_t type, char *id, void* gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_BLOCK);
   if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
-    s->val = val;
+    
+	s->gval = gval;
   } else {
-    s_push(&vars, (stackval_t) { .val = val, .id = strdup(id) });
+	//TODO gval = strdup(gval) in case of pointer
+    s_push(&vars, (stackval_t) { .type = type, .gval = gval, .id = strdup(id) });
   }
 
-  return val;
+  return gval;
 }
 
-int var_set (char *id, int val) {
+value_t var_set (char *id, void* gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
   if (s)
-    s->val = val;
+    s->gval = gval;
   else {
     // Handle usage of undeclared variable
     // Here: implicitly declare variable
-    var_declare(id, val);
+    //JUST IGNORE var_declare(id, gval);
   }
 
-  return val;
+  return gval;
 }
 
-int var_get (char *id) {
-  stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
-  if (s)
-    return s->val;
-  else {
-    // Handle usage of undeclared variable
-    // Here: implicitly declare variable
-    var_declare(id, 0);
-    return 0;
-  }
+value_t var_get (char *id) {
+	stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
+	if (s)
+		return s->gval;
+	else {
+    	// Handle usage of undeclared variable
+    	// Here: implicitly declare variable
+    	//JUST IGNORE var_declare(id, 0);
+		//TODO is it good solution?	
+		return (value_t) 0;
+	}
 }
 
 void var_enter_block (void) {
@@ -147,7 +151,7 @@ void var_dump (void) {
 				printf("BLOCK\n");
 				break;
 			default:
-				printf("%s : %d\n", run->data.id, run->data.val);
+				print_gdata(run);
 		}
 		run = run->next;
 	}
@@ -155,7 +159,7 @@ void var_dump (void) {
   	
 	run = globals.head;
 	while(run){
-		printf("%s : %d (global)\n", run->data.id, run->data.val);
+		print_gdata(run);	
 		run = run->next;
 	}
 	printf("-- GLOBALS --\n\n");
@@ -164,23 +168,43 @@ void var_dump (void) {
 #ifdef TEST
 int main (void) {
   var_enter_function(); var_dump();
-  var_declare_global("a", 2121);
-  var_declare("a", 100); var_dump();
-  var_declare("b", 200); var_dump();
-  printf("%d\n", var_get("a"));
+  var_declare_global( _float, "a", &((float) 2121.21));
+  var_declare( _float, "a", &((float) 100.10); var_dump();
+  var_declare( _float, "b", &((float) 200.20); var_dump();
+  printf("%f\n", var_get("a").float_val);
   var_enter_function(); var_dump();
-  printf("%d\n", var_get("a"));
-  var_declare("a", 42); var_dump();
-  var_declare("x", 432); var_dump();
-  printf("%d\n", var_get("a"));
+  printf("%f\n", var_get("a").float_val);
+  var_declare(_float, "a", &((float) 42.42); var_dump();
+  var_declare(_float, "x", &((float) 432.43); var_dump();
+  printf("%f\n", var_get("a").float_val);
   var_enter_block(); var_dump();
-  var_declare("a", 9999); var_dump();
-  var_set("x", 10000); var_dump();
-  printf("%d\n", var_get("a"));
-  printf("%d\n", var_get("x"));
+  var_declare(_float, "a", &((float)  9999.99); var_dump();
+  var_set("x", &((float) 10000.10); var_dump();
+  printf("%f\n", var_get("a").float_val);
+  printf("%f\n", var_get("x").float_val);
   var_leave_function(); var_dump();
   var_leave_function(); var_dump();
-  printf("%d\n", var_get("a"));
+  printf("%f\n", var_get("a").float_val);
+/*
+  var_enter_function(); var_dump();
+  var_declare_global( _int, "a", (value_t) 2121);
+  var_declare( _int, "a", (value_t) 100); var_dump();
+  var_declare( _int, "b", (value_t) 200); var_dump();
+  printf("%d\n", var_get("a").int_val);
+  var_enter_function(); var_dump();
+  printf("%d\n", var_get("a").int_val);
+  var_declare(_int, "a", (value_t) 42); var_dump();
+  var_declare(_int, "x", (value_t) 432); var_dump();
+  printf("%d\n", var_get("a").int_val);
+  var_enter_block(); var_dump();
+  var_declare(_int, "a", (value_t) 9999); var_dump();
+  var_set("x", (value_t) 10000); var_dump();
+  printf("%d\n", var_get("a").int_val);
+  printf("%d\n", var_get("x").int_val);
+  var_leave_function(); var_dump();
+  var_leave_function(); var_dump();
+  printf("%d\n", var_get("a").int_val);
+*/
 }
 
 #endif
