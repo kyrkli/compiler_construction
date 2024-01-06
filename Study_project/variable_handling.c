@@ -1,11 +1,14 @@
 #include "variable_handling.h"
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
-static stack_t vars, globals;
+stack_t vars, globals;
 
 static stackval_t *var_lookup (char *id, int border) {
 	node_t *run = vars.head;
 	while(run){
-		if(run->data->flags >= border)
+		if(run->data.flags >= border)
 			break;
 		if(!strcmp(run->data.id, id))
 			return &run->data;
@@ -25,20 +28,20 @@ static stackval_t *var_lookup (char *id, int border) {
 	return NULL;
 }
 
-int var_declare_global (char *id, int val) {
+value_t var_declare_global (type_t type, char *id, value_t gval) {
   stackval_t *s = var_lookup (id, 0);
   if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
-    s->val = val;
+    s->gval = gval;
   } else {
-    s_push(&globals, (stackval_t) { .val = val, .id = strdup(id) });
+    s_push(&globals, (stackval_t) { .type = type, .gval = gval, .id = strdup(id) });
   }
 
-  return val;
+  return gval;
 }
 
-int var_declare (char *id, int val) {
+value_t var_declare (type_t type, char *id, value_t gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_BLOCK);
   if (s) {
     // Handle multiple declaration in same block
@@ -92,15 +95,15 @@ void var_leave_block (void) {
   	}
 	
 	assert(block_is_found == 1);
-	
+		
 	run = vars.head;
   	while(run) {
 		if(run->data.flags == VAR_BORDER_BLOCK){
-			s_pop(vars);
+			s_pop(&vars);
 			break;
 		}
 		run = run->next;
-		s_pop(vars);
+		s_pop(&vars);
 	}
 }
 
@@ -124,40 +127,48 @@ void var_leave_function (void) {
 	run = vars.head;
   	while(run) {
 		if(run->data.flags == VAR_BORDER_FUNC){
-			s_pop(vars);
+			s_pop(&vars);
 			break;
 		}
 		run = run->next;
-		s_pop(vars);
+		s_pop(&vars);
 	}
 }
 
 void var_dump (void) {
-  printf("-- TOP --\n");
-  for (int i = vars.size-1; i >= 0; i--) {
-    if (vars.vals[i].flags == VAR_BORDER_FUNC) {
-      printf("FUNCTION\n");
-    } else if (vars.vals[i].flags == VAR_BORDER_BLOCK) {
-      printf("BLOCK\n");
-    } else {
-      printf("%s : %d\n", vars.vals[i].id, vars.vals[i].val);
-    }
-  }
-  printf("-- BOTTOM --\n");
-  for (int i = globals.size-1; i >= 0; i--) {
-      printf("%s : %d (global)\n", globals.vals[i].id, globals.vals[i].val);
-  }
-  printf("-- GLOBALS --\n\n");
+	node_t* run = vars.head;
+	printf("-- TOP --\n");
+	while(run){
+		switch(run->data.flags){
+			case VAR_BORDER_FUNC:
+				printf("FUNCTION\n");
+				break;
+			case VAR_BORDER_BLOCK:
+				printf("BLOCK\n");
+				break;
+			default:
+				printf("%s : %d\n", run->data.id, run->data.val);
+		}
+		run = run->next;
+	}
+	printf("-- BOTTOM --\n");
+  	
+	run = globals.head;
+	while(run){
+		printf("%s : %d (global)\n", run->data.id, run->data.val);
+		run = run->next;
+	}
+	printf("-- GLOBALS --\n\n");
 }
-
+#define TEST 1
 #ifdef TEST
 int main (void) {
-  var_enter_func(); var_dump();
+  var_enter_function(); var_dump();
   var_declare_global("a", 2121);
   var_declare("a", 100); var_dump();
   var_declare("b", 200); var_dump();
   printf("%d\n", var_get("a"));
-  var_enter_func(); var_dump();
+  var_enter_function(); var_dump();
   printf("%d\n", var_get("a"));
   var_declare("a", 42); var_dump();
   var_declare("x", 432); var_dump();
@@ -167,8 +178,8 @@ int main (void) {
   var_set("x", 10000); var_dump();
   printf("%d\n", var_get("a"));
   printf("%d\n", var_get("x"));
-  var_leave_func(); var_dump();
-  var_leave_func(); var_dump();
+  var_leave_function(); var_dump();
+  var_leave_function(); var_dump();
   printf("%d\n", var_get("a"));
 }
 

@@ -2,7 +2,7 @@
 //includes
 #include <stdio.h>
 #include <math.h>
-
+#include "variable_handling.h"
 
 int yylex(void);
 void yyerror(const char* msg){
@@ -13,12 +13,6 @@ void yyerror(const char* msg){
 %define parse.error verbose
 
 %code requires {
-typedef enum {
-    _char = 0,
-    _int,
-    _float,
-    _double
-} Types_t;
 
 }
 
@@ -41,16 +35,18 @@ typedef enum {
 %left '-' '+'  
 %left '*' '/'
 %right '^'
-%type <num> NEXT DECLARE TERM
+
+%type <str> DECLARE 
+%type <num> NEXT TERM
 %%
 S : S NEXT
   | %empty
 
-NEXT: DECLARE
-	| DECLARE '=' TERM { setvar(); } 
+NEXT: DECLARE { var_declare_global($1, 0); }
+	| DECLARE '=' TERM { var_declare_global($1, $3); } 
 	//next functionality
 
-DECLARE: type '-' '>' id newline {  } 
+DECLARE: type '-' '>' id newline { $$ = $4;} 
 
 TERM: TERM '-' TERM { $$ = $1 - $3; }
 	| TERM '+' TERM { $$ = $1 + $3; }
