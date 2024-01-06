@@ -28,43 +28,143 @@ static stackval_t *var_lookup (char *id, int border) {
 	return NULL;
 }
 
-value_t var_declare_global (type_t type, char *id, void* gval) {
-  stackval_t *s = var_lookup (id, 0);
-  if (s) {
+void* var_declare_global (type_t type, char *id, void* gval) {
+	stackval_t *s = var_lookup (id, 0);
+	if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
-    s->gval = gval;
-  } else {
+    switch(type){
+		case _char:
+			s->gval.char_val = *(char *) gval;
+			break;
+		case _int:
+			s->gval.int_val = *(int *) gval;
+			break;
+		case _float:
+			s->gval.float_val = *(float *) gval;
+			break;
+		case _double:
+			s->gval.double_val = *(double *) gval;
+			break;
+		default://TODO another types
+			break;
+	}
+	} else {
 	//TODO gval = strdup(gval) in case of pointer
-    s_push(&globals, (stackval_t) { .type = type, .gval = gval, .id = strdup(id) });
-  }
+	switch(type){
+		case _char:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.char_val = *(char *) gval, .id = strdup(id) });
+			break;
+		case _int:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
+			break;
+		case _float:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.float_val = *(float *) gval, .id = strdup(id) });
+			break;
+		case _double:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
+			break;
+		case _charptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+			break;
+		case _intptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
+			break;
+		case _floatptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
+			break;
+		case _doubleptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
+			break;
+		default://TODO good default
+			break;
+	}
+	}
 
   return gval;
 }
 
-value_t var_declare (type_t type, char *id, void* gval) {
+void* var_declare (type_t type, char *id, void* gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_BLOCK);
   if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
-    
-	s->gval = gval;
+     switch(type){
+		case _char:
+			s->gval.char_val = *(char *) gval;
+			break;
+		case _int:
+			s->gval.int_val = *(int *) gval;
+			break;
+		case _float:
+			s->gval.float_val = *(float *) gval;
+			break;
+		case _double:
+			s->gval.double_val = *(double *) gval;
+			break;
+		default://TODO another types
+			break;
+	}   
   } else {
 	//TODO gval = strdup(gval) in case of pointer
-    s_push(&vars, (stackval_t) { .type = type, .gval = gval, .id = strdup(id) });
+  	switch(type){
+		case _char:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.char_val = *(char *) gval, .id = strdup(id) });
+			break;
+		case _int:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
+			break;
+		case _float:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.float_val = *(float *) gval, .id = strdup(id) });
+			break;
+		case _double:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
+			break;
+		case _charptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+			break;
+		case _intptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
+			break;
+		case _floatptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
+			break;
+		case _doubleptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
+			break;
+		default://TODO good default
+			break;
+	}
   }
 
   return gval;
 }
 
-value_t var_set (char *id, void* gval) {
+void* var_set (char *id, void* gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
-  if (s)
-    s->gval = gval;
-  else {
+  if (s){
+      type_t type = s->type; 
+	  switch(type){
+		case _char:
+			s->gval.char_val = *(char *) gval;
+			break;
+		case _int:
+			s->gval.int_val = *(int *) gval;
+			break;
+		case _float:
+			s->gval.float_val = *(float *) gval;
+			break;
+		case _double:
+			s->gval.double_val = *(double *) gval;
+			break;
+		default://TODO another types
+			break;
+	}
+
+  } else {
     // Handle usage of undeclared variable
     // Here: implicitly declare variable
-    //JUST IGNORE var_declare(id, gval);
+    //TODO JUST IGNORE var_declare(id, gval);
   }
 
   return gval;
@@ -80,6 +180,7 @@ value_t var_get (char *id) {
     	//JUST IGNORE var_declare(id, 0);
 		//TODO is it good solution?	
 		return (value_t) 0;
+
 	}
 }
 
@@ -168,23 +269,24 @@ void var_dump (void) {
 #ifdef TEST
 int main (void) {
   var_enter_function(); var_dump();
-  var_declare_global( _float, "a", &((float) 2121.21));
-  var_declare( _float, "a", &((float) 100.10); var_dump();
-  var_declare( _float, "b", &((float) 200.20); var_dump();
-  printf("%f\n", var_get("a").float_val);
+  var_declare_global( _double, "a", &((double){2121.21}));
+  var_declare( _double, "a", &((double) {100.10})); var_dump();
+  var_declare( _double, "b", &((double) {200.20})); var_dump();
+  printf("%f\n", var_get("a").double_val);
   var_enter_function(); var_dump();
-  printf("%f\n", var_get("a").float_val);
-  var_declare(_float, "a", &((float) 42.42); var_dump();
-  var_declare(_float, "x", &((float) 432.43); var_dump();
-  printf("%f\n", var_get("a").float_val);
+  printf("%f\n", var_get("a").double_val);
+  var_declare(_double, "a", &((double) {42.42})); var_dump();
+  var_declare(_double, "x", &((double) {432.43})); var_dump();
+  printf("%f\n", var_get("a").double_val);
   var_enter_block(); var_dump();
-  var_declare(_float, "a", &((float)  9999.99); var_dump();
-  var_set("x", &((float) 10000.10); var_dump();
-  printf("%f\n", var_get("a").float_val);
-  printf("%f\n", var_get("x").float_val);
+  var_declare(_double, "a", &((double) {9999.99})); var_dump();
+  var_set("x", &((double) {10000.10})); var_dump();                                                                          
+  printf("%f\n", var_get("a").double_val);
+  printf("%f\n", var_get("x").double_val);
   var_leave_function(); var_dump();
   var_leave_function(); var_dump();
-  printf("%f\n", var_get("a").float_val);
+  printf("%f\n", var_get("a").double_val);
+
 /*
   var_enter_function(); var_dump();
   var_declare_global( _int, "a", (value_t) 2121);
@@ -206,5 +308,4 @@ int main (void) {
   printf("%d\n", var_get("a").int_val);
 */
 }
-
 #endif
