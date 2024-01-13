@@ -52,9 +52,6 @@ void print_gdata(node_t* node){
         case _int:
           	printf("(type = %d, id = %s, val = %d)\n", node->data.type, node->data.id, node->data.gval.int_val);
     	    break;
-      	case _float:
-        	printf("(type = %d, id = %s, val = %f)\n", node->data.type, node->data.id, node->data.gval.float_val);
-         	break;
   	    case _double:
             printf("(type = %d, id = %s, val = %f)\n", node->data.type, node->data.id, node->data.gval.double_val);
             break;
@@ -64,9 +61,6 @@ void print_gdata(node_t* node){
         case _intptr:
             printf("(type = %d, id = %s, ptr = %p -> val = %d)\n", node->data.type, node->data.id, (void *) node->data.gval.intptr_val, *(node->data.gval.intptr_val));
             break;
-        case _floatptr:
-            printf("(type = %d, id = %s, ptr = %p -> val = %f)\n", node->data.type, node->data.id, (void *) node->data.gval.floatptr_val, *(node->data.gval.floatptr_val));
-       	    break;
       	case _doubleptr:
      		printf("(type = %d, id = %s, ptr = %p -> val = %f)\n", node->data.type, node->data.id, (void *) node->data.gval.doubleptr_val, *(node->data.gval.doubleptr_val));
             break;

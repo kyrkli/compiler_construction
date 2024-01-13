@@ -1,3 +1,6 @@
+#ifndef VARIABLE_HANDLING_H
+#define VARIABLE_HANDLING_H
+
 #include "stack.h"
 
 extern stack_t vars, globals;
@@ -14,3 +17,7 @@ void var_leave_block (void);
 void var_enter_function (void);
 void var_leave_function (void);
 void var_dump (void);
+
+void var_declare_global_zero (type_t type, char *id);
+
+#endif

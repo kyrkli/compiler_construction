@@ -40,9 +40,6 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 		case _int:
 			s->gval.int_val = *(int *) gval;
 			break;
-		case _float:
-			s->gval.float_val = *(float *) gval;
-			break;
 		case _double:
 			s->gval.double_val = *(double *) gval;
 			break;
@@ -58,23 +55,20 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 		case _int:
     		s_push(&globals, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
 			break;
-		case _float:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.float_val = *(float *) gval, .id = strdup(id) });
-			break;
 		case _double:
     		s_push(&globals, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
 			break;
 		case _charptr:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+    		//s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
 			break;
 		case _intptr:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
+    		//s_push(&globals, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
 			break;
 		case _floatptr:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
+    		//s_push(&globals, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
 			break;
 		case _doubleptr:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
+    		//s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
 			break;
 		default://TODO good default
 			break;
@@ -96,9 +90,6 @@ void* var_declare (type_t type, char *id, void* gval) {
 		case _int:
 			s->gval.int_val = *(int *) gval;
 			break;
-		case _float:
-			s->gval.float_val = *(float *) gval;
-			break;
 		case _double:
 			s->gval.double_val = *(double *) gval;
 			break;
@@ -114,23 +105,20 @@ void* var_declare (type_t type, char *id, void* gval) {
 		case _int:
     		s_push(&vars, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
 			break;
-		case _float:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.float_val = *(float *) gval, .id = strdup(id) });
-			break;
 		case _double:
     		s_push(&vars, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
 			break;
 		case _charptr:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+    		//s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
 			break;
 		case _intptr:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
+    		//s_push(&vars, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
 			break;
 		case _floatptr:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
+    		//s_push(&vars, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
 			break;
 		case _doubleptr:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
+    		//s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
 			break;
 		default://TODO good default
 			break;
@@ -150,9 +138,6 @@ void* var_set (char *id, void* gval) {
 			break;
 		case _int:
 			s->gval.int_val = *(int *) gval;
-			break;
-		case _float:
-			s->gval.float_val = *(float *) gval;
 			break;
 		case _double:
 			s->gval.double_val = *(double *) gval;
@@ -265,9 +250,53 @@ void var_dump (void) {
 	}
 	printf("-- GLOBALS --\n\n");
 }
-#define TEST 1
+
+void var_declare_global_zero (type_t type, char *id){
+	switch(type){
+		case _char:
+			var_declare_global(type, id, &( (char) {'\0'} ));
+			break;
+		case _int:
+			var_declare_global(type, id, &( (int) {0} ));
+			break;
+		case _float:
+			var_declare_global(type, id, &( (float) {0.0} ));
+			break;
+		case _double:
+			var_declare_global(type, id, &( (double) {0.0} ));
+			break;
+		case _charptr:
+		case _intptr:
+		case _floatptr:
+		case _doubleptr:
+		default://TODO good default
+			break;
+
+	}
+	
+}
+
 #ifdef TEST
 int main (void) {
+  var_enter_function(); var_dump();
+  var_declare_global( _int, "a", &((double){2121.21}));
+  var_declare( _int, "a", &((double) {100.10})); var_dump();
+  var_declare( _int, "b", &((double) {200.20})); var_dump();
+  printf("%f\n", var_get("a").double_val);
+  var_enter_function(); var_dump();
+  printf("%f\n", var_get("a").double_val);
+  var_declare(_int, "a", &((double) {42.42})); var_dump();
+  var_declare(_int, "x", &((double) {432.43})); var_dump();
+  printf("%f\n", var_get("a").double_val);                                                           
+  var_enter_block(); var_dump();
+  var_declare(_int, "a", &((double) {9999.99})); var_dump();
+  var_set("x", &((double) {10000.10})); var_dump();                                                  
+  printf("%f\n", var_get("a").double_val);
+  printf("%f\n", var_get("x").double_val);
+  var_leave_function(); var_dump();
+  var_leave_function(); var_dump();
+  printf("%f\n", var_get("a").double_val); 
+/*
   var_enter_function(); var_dump();
   var_declare_global( _double, "a", &((double){2121.21}));
   var_declare( _double, "a", &((double) {100.10})); var_dump();
@@ -277,35 +306,16 @@ int main (void) {
   printf("%f\n", var_get("a").double_val);
   var_declare(_double, "a", &((double) {42.42})); var_dump();
   var_declare(_double, "x", &((double) {432.43})); var_dump();
-  printf("%f\n", var_get("a").double_val);
+  printf("%f\n", var_get("a").double_val);                                                           
   var_enter_block(); var_dump();
   var_declare(_double, "a", &((double) {9999.99})); var_dump();
-  var_set("x", &((double) {10000.10})); var_dump();                                                                          
+  var_set("x", &((double) {10000.10})); var_dump();                                                  
   printf("%f\n", var_get("a").double_val);
   printf("%f\n", var_get("x").double_val);
   var_leave_function(); var_dump();
   var_leave_function(); var_dump();
   printf("%f\n", var_get("a").double_val);
 
-/*
-  var_enter_function(); var_dump();
-  var_declare_global( _int, "a", (value_t) 2121);
-  var_declare( _int, "a", (value_t) 100); var_dump();
-  var_declare( _int, "b", (value_t) 200); var_dump();
-  printf("%d\n", var_get("a").int_val);
-  var_enter_function(); var_dump();
-  printf("%d\n", var_get("a").int_val);
-  var_declare(_int, "a", (value_t) 42); var_dump();
-  var_declare(_int, "x", (value_t) 432); var_dump();
-  printf("%d\n", var_get("a").int_val);
-  var_enter_block(); var_dump();
-  var_declare(_int, "a", (value_t) 9999); var_dump();
-  var_set("x", (value_t) 10000); var_dump();
-  printf("%d\n", var_get("a").int_val);
-  printf("%d\n", var_get("x").int_val);
-  var_leave_function(); var_dump();
-  var_leave_function(); var_dump();
-  printf("%d\n", var_get("a").int_val);
 */
 }
 #endif

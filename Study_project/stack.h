@@ -1,3 +1,7 @@
+#ifndef STACK_H
+#define STACK_H
+
+
 typedef enum {
 	_char = 0,
 	_int,
@@ -12,13 +16,16 @@ typedef enum {
 typedef union {
 	char char_val;
 	int int_val;
-	float float_val;
 	double double_val;
 	char* charptr_val;
 	int* intptr_val;
-	float* floatptr_val;
 	double* doubleptr_val;
 } value_t;
+
+typedef struct {                                                                                         
+	type_t type;
+	value_t gval;
+} term_t;
 
 typedef struct {
 	type_t type;
@@ -47,3 +54,5 @@ void show_stack(stack_t *s);
 
 stackval_t* s_peek(stack_t *s);
 stackval_t* s_lookup(stack_t *s, char *id);
+
+#endif
