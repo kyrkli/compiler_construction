@@ -1,3 +1,10 @@
+@@ trallala 	hopla,.;
+@ Das sind meine Kommentare
+lala
+Obana + 123 +++ 12
+#
 int->abc123
-=int->octopus->10 + 91 + hex->aa
+=int->555
+int->newval
+=int->abc123 + 5
 

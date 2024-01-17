@@ -43,6 +43,12 @@ void free_stack(stack_t *s){
 	free(s);
 }
 
+void runtime_error(int cond, char* msg){
+	if(!cond) {
+		printf("!RUNTIME ERROR!\n%s", msg);
+		exit(1);
+	}
+}
 
 void print_gdata(node_t* node){
 	switch(node->data.type){

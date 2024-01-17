@@ -1,7 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 
-
 typedef enum {
 	_char = 0,
 	_int,
@@ -54,5 +53,6 @@ void show_stack(stack_t *s);
 
 stackval_t* s_peek(stack_t *s);
 stackval_t* s_lookup(stack_t *s, char *id);
+void runtime_error(int cond, char* msg);
 
 #endif

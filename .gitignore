@@ -4,3 +4,5 @@ hello
 *.tab.c
 *.tab.h
 *.yy.c
+ast.gv
+ast.png

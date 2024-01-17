@@ -30,6 +30,7 @@ static stackval_t *var_lookup (char *id, int border) {
 
 void* var_declare_global (type_t type, char *id, void* gval) {
 	stackval_t *s = var_lookup (id, 0);
+
 	if (s) {
     // Handle multiple declaration in same block
     // Here: Just ignore the new declaration, set new value
@@ -57,6 +58,7 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 			break;
 		case _double:
     		s_push(&globals, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
+			printf("TRULALA\n");
 			break;
 		case _charptr:
     		//s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
@@ -155,17 +157,14 @@ void* var_set (char *id, void* gval) {
   return gval;
 }
 
-value_t var_get (char *id) {
-	stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
+stackval_t var_get (char *id) {
+	stackval_t *s = var_lookup(id, VAR_BORDER_FUNC);
 	if (s)
-		return s->gval;
+		return *s;
 	else {
     	// Handle usage of undeclared variable
-    	// Here: implicitly declare variable
-    	//JUST IGNORE var_declare(id, 0);
-		//TODO is it good solution?	
-		return (value_t) 0;
-
+		runtime_error(1, "Detected usage of undeclared variable\n");
+		return (stackval_t) {};
 	}
 }
 
@@ -251,29 +250,36 @@ void var_dump (void) {
 	printf("-- GLOBALS --\n\n");
 }
 
-void var_declare_global_zero (type_t type, char *id){
-	switch(type){
+void var_declare_general_zero(stackval_t svar, char mod){
+	switch(svar.type){
 		case _char:
-			var_declare_global(type, id, &( (char) {'\0'} ));
+			if(mod == 'g')
+				var_declare_global(svar.type, svar.id, &( (char) {'\0'} ));
+			else var_declare(svar.type, svar.id, &( (char) {'\0'} ));
 			break;
 		case _int:
-			var_declare_global(type, id, &( (int) {0} ));
-			break;
-		case _float:
-			var_declare_global(type, id, &( (float) {0.0} ));
+			if(mod == 'g')
+				var_declare_global(svar.type, svar.id, &( (int) {0} ));
+			else var_declare(svar.type, svar.id, &( (int) {0} ));
 			break;
 		case _double:
-			var_declare_global(type, id, &( (double) {0.0} ));
+			if(mod == 'g')
+				var_declare_global(svar.type, svar.id, &( (double) {0.0} ));
+			else var_declare(svar.type, svar.id, &( (double) {0.0} ));
 			break;
-		case _charptr:
-		case _intptr:
-		case _floatptr:
-		case _doubleptr:
-		default://TODO good default
-			break;
-
 	}
-	
+
+		
+}
+
+void var_declare_general_val(stackval_t svar, char mod){
+	//TODO runtime error mod != g != l	
+
+	if(mod == 'g')
+		var_declare_global(svar.type, svar.id, &svar.gval);
+	else
+		var_declare(svar.type, svar.id, &svar.gval);
+
 }
 
 #ifdef TEST
