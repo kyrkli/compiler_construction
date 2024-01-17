@@ -8,8 +8,13 @@
 
 typedef enum {
 	PROG = 0,
-	NEXT,
-	GVARDEF,
+	GLVARDEF,
+	LOCAL,
+	SLOCAL,
+	LVARDEF,
+	BLOCK,
+	VARDEF,
+	GLOBAL,
 	ASSVAR,
 	VARIABLE,
 	STERM,

@@ -44,22 +44,46 @@ int yydebug = 0;
 %left '*' '/'
 %right '^'
 
-%type <ast> S PROG FUNCDEF NEXT GVARDEF VARIABLE STERM TERM
+%type <ast> S PROG BLOCK GLVARDEF VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL
 %%
 S : PROG { execute_ast($1); var_dump(); print_ast($1, 0); }
 
-PROG : PROG NEXT  { $$ = astnode_new(PROG);
+PROG : PROG GLOBAL { $$ = astnode_new(PROG);
+	 				 $$->child[0] = $1; $$->child[1] = $2; }
+	 | PROG BLOCK { $$ = astnode_new(PROG);
 	 				$$->child[0] = $1; $$->child[1] = $2; }
 	 | %empty
 
-//possible functionality
-NEXT : GVARDEF { $$ = astnode_new(NEXT);
-				$$->child[0] = $1; }
-	 | FUNCDEF { $$ = astnode_new(NEXT);
-	 			$$->child[0] = $1; }
+//global functionality
+GLOBAL 	: GLVARDEF { $$ = astnode_new(GLOBAL);
+					 $$->child[0] = $1; }
+//	 	| FUNCDEF { $$ = astnode_new(NEXT);
+//	 				$$->child[0] = $1; }
 
-FUNCDEF : 'f' id type '[' ARGS ']' newline BLOCK 
-GVARDEF : VARIABLE	{ $$ = astnode_new(GVARDEF);
+BLOCK : '%' newline SLOCAL '%' newline { $$ = astnode_new(BLOCK);
+	  									 $$->child[0] = $3;}
+
+SLOCAL 	: BLOCK { $$ = astnode_new(SLOCAL); 
+			 	  $$->child[0] = $1;}
+	   	| SLOCAL LOCAL { $$ = astnode_new(SLOCAL);
+						 $$->child[0] = $1; $$->child[1] = $2;}
+	   	| LOCAL SLOCAL { $$ = astnode_new(SLOCAL);
+						 $$->child[0] = $1; $$->child[1] = $2;}
+		| %empty
+
+//local functionality
+LOCAL	: LVARDEF { $$ = astnode_new(LOCAL);
+	  				$$->child[0] = $1; }
+
+LVARDEF : VARDEF  { $$ = astnode_new(LVARDEF);
+					$$->child[0] = $1; }
+
+GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF);
+		 			$$->child[0] = $1; }
+
+//FUNCDEF : 'f' id type '[' ARGS ']' newline BLOCK 
+
+VARDEF : VARIABLE	{ $$ = astnode_new(VARDEF);
 					  $$->child[0] = $1; }
 
 	    | VARIABLE '=' STERM newline  {	$$ = astnode_new(ASSVAR);

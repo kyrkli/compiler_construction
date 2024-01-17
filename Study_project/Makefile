@@ -1,13 +1,13 @@
 CC=gcc
 CFLAGS=-O2 -Wall -ggdb
-CDFLAGS=-ll -Wunused-function
+CDFLAGS=-ll -Wunused-function 
 OBJ=exec.tab.o lex.yy.o variable_handling.o stack.o ast.o
 
 exec: $(OBJ)
 	$(CC) -o $@ $^ -lm
 
 exec.tab.c exec.tab.h: exec.y
-	bison --defines exec.y
+	bison --defines exec.y -Wcounterexamples
 
 exec.tab.o: exec.tab.c exec.tab.h
 
