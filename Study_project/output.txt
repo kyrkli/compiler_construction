@@ -1,0 +1,245 @@
+line comment is open
+char in comments =  
+char in comments = t
+char in comments = r
+char in comments = a
+char in comments = l
+char in comments = l
+char in comments = a
+char in comments = l
+char in comments = a
+char in comments =  
+char in comments = 	
+char in comments = h
+char in comments = o
+char in comments = p
+char in comments = l
+char in comments = a
+char in comments = ,
+char in comments = .
+char in comments = ;
+line comment is closed
+block comment is open
+char in comments =  
+char in comments = D
+char in comments = a
+char in comments = s
+char in comments =  
+char in comments = s
+char in comments = i
+char in comments = n
+char in comments = d
+char in comments =  
+char in comments = m
+char in comments = e
+char in comments = i
+char in comments = n
+char in comments = e
+char in comments =  
+char in comments = K
+char in comments = o
+char in comments = m
+char in comments = m
+char in comments = e
+char in comments = n
+char in comments = t
+char in comments = a
+char in comments = r
+char in comments = e
+newline in comments
+char in comments = l
+char in comments = a
+char in comments = l
+char in comments = a
+newline in comments
+char in comments = O
+char in comments = b
+char in comments = a
+char in comments = n
+char in comments = a
+char in comments =  
+char in comments = +
+char in comments =  
+char in comments = 1
+char in comments = 2
+char in comments = 3
+char in comments =  
+char in comments = +
+char in comments = +
+char in comments = +
+char in comments =  
+char in comments = 1
+char in comments = 2
+newline in comments
+block comment is closed
+default = '-'
+default = '>'
+newline
+ast id = 1
+ast id = 1
+
+default = '='
+default = '-'
+default = '>'
+ast id = 2
+ast id = 2
+
+newline
+ast id = 3
+ast id = 3
+
+ast id = 4
+ast id = 4
+
+ast id = 5
+ast id = 5
+
+ast id = 6
+ast id = 6
+
+ast id = 7
+ast id = 7
+
+default = '%'
+newline
+default = '-'
+default = '>'
+newline
+ast id = 8
+ast id = 8
+
+default = '='
+default = '-'
+default = '>'
+ast id = 9
+ast id = 9
+
+default = '+'
+ast id = 10
+ast id = 10
+
+newline
+ast id = 11
+ast id = 11
+
+ast id = 12
+ast id = 12
+
+ast id = 13
+ast id = 13
+
+ast id = 14
+ast id = 14
+
+ast id = 15
+ast id = 15
+
+default = '$'
+ast id = 16
+ast id = 16
+
+newline
+ast id = 17
+ast id = 17
+
+ast id = 18
+ast id = 18
+
+newline
+
+start of execute ast, node = PROG
+PROG--------
+
+start of execute ast, node = PROG
+PROG--------
+
+start of execute ast, node = GLOBAL
+GLOBAL--------
+
+start of execute ast, node = GLVARDEF
+GLVARDEF--------
+
+start of execute ast, node = ASSVARDEF
+ASSVARDEF--------
+id = 4
+
+start of execute ast, node = VARIABLE
+VARIABLE--------
+
+start of execute ast, node = STERM
+
+start of execute ast, node = NUM
+NUM--------
+STERM--------
+
+start of execute ast, node = BLOCK
+BLOCK--------
+
+start of execute ast, node = SLOCAL
+SLOCAL--------
+
+start of execute ast, node = LOCAL
+LOCAL--------
+
+start of execute ast, node = LVARDEF
+LVARDEF--------
+
+start of execute ast, node = ASSVARDEF
+ASSVARDEF--------
+id = 13
+
+start of execute ast, node = VARIABLE
+VARIABLE--------
+
+start of execute ast, node = STERM
+
+start of execute ast, node = PLUS
+PLUS--------
+
+start of execute ast, node = NUM
+NUM--------
+
+start of execute ast, node = GETIDVAL
+GETIDVAL--------
+STERM--------
+
+start of execute ast, node = VARIABLE
+VARIABLE--------
+-- TOP --
+(type = 1, id = newval, val = 560)
+BLOCK
+-- BOTTOM --
+(type = 1, id = abc123, val = 555)
+-- GLOBALS --
+
+Hallo 1
+ptr child[0] = 0x55e5da64b650
+in for root->id = 18, label = PROG
+in for root->child[0]->id = 7, child label = PROG
+
+Hallo 2
+ptr child[0] = (nil)
+ptr child[1] = 0x55e5da64b5f0
+in for root->id = 7, label = PROG
+in for root->child[1]->id = 6, child label = GLOBAL
+
+Hallo 3
+ptr child[0] = 0x55e5da64b590
+in for root->id = 6, label = GLOBAL
+in for root->child[0]->id = 5, child label = GLVARDEF
+
+Hallo 4
+ptr child[0] = 0x55e5da64b530
+in for root->id = 5, label = GLVARDEF
+in for root->child[0]->id = 4, child label = ASSVARDEF
+
+Hallo 5
+ptr child[0] = 0x55e5da64b3f0
+in for root->id = 4, label = ASSVARDEF
+in for root->child[0]->id = 1, child label = VARIABLE
+
+Hallo 6
+ptr child[0] = (nil)
+ptr child[1] = (nil)
+ptr child[2] = (nil)
+ptr child[3] = (

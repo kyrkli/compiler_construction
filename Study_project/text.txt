@@ -5,6 +5,8 @@ Obana + 123 +++ 12
 #
 int->abc123
 =int->555
+%
 int->newval
 =int->abc123 + 5
+$
 

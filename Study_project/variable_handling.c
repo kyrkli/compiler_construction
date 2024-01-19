@@ -250,6 +250,21 @@ void var_dump (void) {
 	printf("-- GLOBALS --\n\n");
 }
 
+void set_general_svar_zero(stackval_t* svar){
+	switch(svar->type){
+		case _char:
+			svar->gval.char_val = '\0';
+			break;
+		case _int:
+			svar->gval.int_val = 0;
+			break;
+		case _double:
+			svar->gval.double_val = 0.0;
+			break;
+	}
+
+}
+
 void var_declare_general_zero(stackval_t svar, char mod){
 	switch(svar.type){
 		case _char:

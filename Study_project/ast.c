@@ -9,7 +9,9 @@
 int ast_id = 0;
 
 astnode_t *astnode_new (asttype_t type) { 
-	astnode_t *a = calloc (sizeof *a, 1); 
+	printf("ast id = %d\n", ast_id + 1);
+	astnode_t *a = calloc (sizeof *a, 1);
+	printf("ast id = %d\n\n", ast_id + 1);
 	a->type = type; 
 	a->id = ++ast_id;
 	return a; 
@@ -26,30 +28,64 @@ stackval_t execute_ast (astnode_t *root) {
 			execute_ast(root->child[0]);
 			root->val.svar = execute_ast(root->child[1]);
 			return root->val.svar;
-		case NEXT:
-			printf("NEXT--------\n");
+		case GLOBAL:
+			printf("GLOBAL--------\n");
 			root->val.svar = execute_ast(root->child[0]);
 			return root->val.svar;
-		case GVARDEF: 
-			printf("GVARDEF--------\n");
+		case GLVARDEF: 
+			printf("GLVARDEF--------\n");
 			root->val.svar = execute_ast(root->child[0]);
-			var_declare_general_zero(root->val.svar, 'g');
+			var_declare_general_val(root->val.svar, 'g');
 			return root->val.svar;
-		case ASSVAR:
-			printf("ASSVAR--------\n");
+		case BLOCK:
+			printf("BLOCK--------\n");
+			var_enter_block();
+			root->val.svar = execute_ast(root->child[0]);
+			return root->val.svar;
+		case SLOCAL:	
+			printf("SLOCAL--------\n");
+			root->val.svar = execute_ast(root->child[0]);
+			execute_ast(root->child[1]);
+			return root->val.svar;
+/*		case SLOCAL_L:	
+			printf("SLOCAL_L--------\n");
+			execute_ast(root->child[0]);
+			root->val.svar = execute_ast(root->child[1]);
+			return root->val.svar;*/
+		case SLOCAL2:
+			printf("SLOCAL2--------\n");
+			execute_ast(root->child[0]);
+			root->val.svar = execute_ast(root->child[1]);
+			return root->val.svar;	
+		case LOCAL:
+			printf("LOCAL--------\n");
+			root->val.svar = execute_ast(root->child[0]);
+			return root->val.svar;
+		case LVARDEF:
+			printf("LVARDEF--------\n");
+			root->val.svar = execute_ast(root->child[0]);
+			var_declare_general_val(root->val.svar, 'l');
+			return root->val.svar;
+		case VARDEF:
+			printf("VARDEF--------\n");
+			root->val.svar = execute_ast(root->child[0]);
+			set_general_svar_zero(&root->val.svar);
+			return root->val.svar;
+		case ASSVARDEF:
+			printf("ASSVARDEF--------\n");
+			printf("id = %d\n", root->id);
 			execute_ast(root->child[0]);
 			execute_ast(root->child[1]);
-			
+			printf("ASSVARDEF END***************************\n");
 			runtime_error(root->child[0]->val.svar.type == root->child[1]->val.svar.type,
 							"The type of the variable need to match the type of the assigning value\n");
-			//assgning values to the root
+			//assigning type, id and value to the root
 			root->val.svar = root->child[0]->val.svar;
 			root->val.svar.gval = root->child[1]->val.svar.gval;
-			
-			var_declare_general_val(root->val.svar, 'g');
 			return root->val.svar;
 		case VARIABLE:
 			printf("VARIABLE--------\n");
+			printf("variable id = %s******************************************************\n", root->val.svar.id);			
 			return root->val.svar; 
 		case GETIDVAL:
 			printf("GETIDVAL--------\n");
@@ -87,6 +123,7 @@ stackval_t execute_ast (astnode_t *root) {
 		default: 
 			assert(1);
 	}
+	return (stackval_t) {};
 }
 
 
@@ -94,14 +131,28 @@ char* node2str(astnode_t* node){
 	switch(node->type){
 		case PROG:
 			return "PROG";
-		case NEXT:
-			return "NEXT";
-		case GVARDEF:
-			return "GVARDEF";
-		case ASSVAR:
-			return "ASSVAR";
+		case ASSVARDEF:
+			return "ASSVARDEF";
 		case VARIABLE:
 			return "VARIABLE";
+		case LOCAL:
+			return "LOCAL";
+		case SLOCAL:
+			return "SLOCAL";
+/*		case SLOCAL_L:
+			return "SLOCAL_L";*/
+		case SLOCAL2:
+			return "SLOCAL2";
+		case LVARDEF:
+			return "LVARDEF";
+		case BLOCK:
+			return "BLOCK";
+		case VARDEF:
+			return "VARDEF";
+		case GLOBAL:
+			return "GLOBAL";
+		case GLVARDEF:
+			return "GLVARDEF";
 		case STERM:
 			return "STERM";
 		case NUM:
@@ -119,9 +170,12 @@ char* node2str(astnode_t* node){
 		case EXP:
 			return "EXP";
 	}
+	return NULL;
 }
 
-void print_ast(astnode_t *root, int depth) { 
+void print_ast(astnode_t *root, int depth) {
+	static int counter = 0;
+	printf("Hallo %d\n", ++counter);
 	static FILE *dot; 
 	if (depth == 0) { 
 		dot = fopen("ast.gv", "w"); 
@@ -129,13 +183,17 @@ void print_ast(astnode_t *root, int depth) {
 	} // Create graph node 
 	fprintf(dot, " n%d [label=\"%s\"]\n", root->id, node2str(root)); 
 	for (int i = 0; i < MAXCHILDREN; i++) {
-		if(root->child[i] != NULL) {
+			printf("ptr child[%d] = %p\n", i, root->child[i]);
 			if (root->child[i]) { 
 				// Create graph edge
+				printf("in for root->id = %d, label = %s\n",
+						root->id, node2str(root));
+				printf("in for root->child[%d]->id = %d, child label = %s\n\n",
+						i, root->child[i]->id, node2str(root->child[i]));
+				//printf("ptr child[%d] = %p\n\n", i, root->child[i]);
 				fprintf(dot, " n%d -> n%d\n", root->id, root->child[i]->id);
 				print_ast(root->child[i], depth+1);
 			} 
-		}
 	} 
 
 	if (depth == 0) { 

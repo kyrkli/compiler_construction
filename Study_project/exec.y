@@ -44,7 +44,7 @@ int yydebug = 0;
 %left '*' '/'
 %right '^'
 
-%type <ast> S PROG BLOCK GLVARDEF VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL
+%type <ast> S PROG BLOCK GLVARDEF VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
 %%
 S : PROG { execute_ast($1); var_dump(); print_ast($1, 0); }
 
@@ -60,15 +60,20 @@ GLOBAL 	: GLVARDEF { $$ = astnode_new(GLOBAL);
 //	 	| FUNCDEF { $$ = astnode_new(NEXT);
 //	 				$$->child[0] = $1; }
 
-BLOCK : '%' newline SLOCAL '%' newline { $$ = astnode_new(BLOCK);
+GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF);
+		 			$$->child[0] = $1; }
+
+BLOCK : '%' newline SLOCAL '$' newline { $$ = astnode_new(BLOCK);
 	  									 $$->child[0] = $3;}
 
-SLOCAL 	: BLOCK { $$ = astnode_new(SLOCAL); 
-			 	  $$->child[0] = $1;}
-	   	| SLOCAL LOCAL { $$ = astnode_new(SLOCAL);
+SLOCAL 	: LOCAL SLOCAL { $$ = astnode_new(SLOCAL);
 						 $$->child[0] = $1; $$->child[1] = $2;}
-	   	| LOCAL SLOCAL { $$ = astnode_new(SLOCAL);
+	   	| BLOCK SLOCAL2 { $$ = astnode_new(SLOCAL);
 						 $$->child[0] = $1; $$->child[1] = $2;}
+		| %empty
+
+SLOCAL2 : SLOCAL2 LOCAL { $$ = astnode_new(SLOCAL2);
+						  $$->child[0] = $1; $$->child[1] = $2;	}
 		| %empty
 
 //local functionality
@@ -78,19 +83,19 @@ LOCAL	: LVARDEF { $$ = astnode_new(LOCAL);
 LVARDEF : VARDEF  { $$ = astnode_new(LVARDEF);
 					$$->child[0] = $1; }
 
-GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF);
-		 			$$->child[0] = $1; }
-
 //FUNCDEF : 'f' id type '[' ARGS ']' newline BLOCK 
 
+
+//general functionality
 VARDEF : VARIABLE	{ $$ = astnode_new(VARDEF);
 					  $$->child[0] = $1; }
 
-	    | VARIABLE '=' STERM newline  {	$$ = astnode_new(ASSVAR);
+	    | VARIABLE '=' STERM newline  {	$$ = astnode_new(ASSVARDEF);
 							 			$$->child[0] = $1; $$->child[1] = $3; }
 
 VARIABLE: type '-' '>' id newline { $$ = astnode_new(VARIABLE);
-									$$->val.svar.type = $1; $$->val.svar.id = $4; }
+									$$->val.svar.type = $1; $$->val.svar.id = $4;
+									printf("VARIABLE NODE IN BISON!\n\n");}
 
 STERM: type '-' '>' TERM {	$$ = astnode_new(STERM);
 	 						$$->val.type = $1; $$->child[0] = $4; }

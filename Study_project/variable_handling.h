@@ -18,6 +18,8 @@ void var_enter_function (void);
 void var_leave_function (void);
 void var_dump (void);
 
+
+void set_general_svar_zero(stackval_t* svar);
 void var_declare_general_zero(stackval_t svar, char mod);
 void var_declare_general_val(stackval_t svar, char mod);
 
