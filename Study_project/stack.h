@@ -2,14 +2,12 @@
 #define STACK_H
 
 typedef enum {
-	_char = 0,
+	_error = -1,
+	_char,
 	_int,
-	_float,
 	_double,
-	_charptr,
-	_intptr,
-	_floatptr,
-	_doubleptr
+	_bool,
+	_charptr
 } type_t;  
 
 typedef union {
@@ -48,7 +46,7 @@ void  s_push(stack_t *s, stackval_t el);
 stackval_t s_pop (stack_t *s);
 int s_isempty(stack_t *s);
 void free_stack(stack_t *s);
-void print_gdata(node_t* node);
+void print_gdata(stackval_t data);
 void show_stack(stack_t *s);
 
 stackval_t* s_peek(stack_t *s);

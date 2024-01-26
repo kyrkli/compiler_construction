@@ -1,12 +1,40 @@
-@@ trallala 	hopla,.;
+@@ dot ast.gv -Tpng -o ast.png
 @ Das sind meine Kommentare
 lala
 Obana + 123 +++ 12
 #
-int->abc123
-=int->555
+FUNC hailstone real [
+]
 %
-int->newval
-=int->abc123 + 5
+	int->n
+	SCANF[int->n]
+	int->counter
+	PRINT[string->str(Start number is:)end]
+	PRINT[int->n]
+	PRINT[string->str(Numbers:)end]
+	WHILE[int->n ! int->1]
+		%
+			IF [int->n mod 2 = int->0]
+				%
+				n = int->n / 2
+				$
+			ELSE
+				%
+				n = int->n * 3 + 1
+				$
+			counter = int->counter + 1
+			PRINT[int->n]
+		$
+	PRINT[string->str()end]
+	PRINT[string->str(The last number:)end]
+	PRINT[int->n]
+	PRINT[string->str(Counter of steps:)end]
+	PRINT[int->counter]
 $
-
+%
+	int->newval
+	=int->10
+	int->abc123
+	=int->5
+	real->rReturn
+$

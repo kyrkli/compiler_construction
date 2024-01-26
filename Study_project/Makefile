@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-O2 -Wall -ggdb
 CDFLAGS=-ll -Wunused-function 
-OBJ=exec.tab.o lex.yy.o variable_handling.o stack.o ast.o
+OBJ=exec.tab.o lex.yy.o variable_handling.o stack.o ast.o queue.o
 
 exec: $(OBJ)
 	$(CC) -o $@ $^ -lm
@@ -17,4 +17,4 @@ lex.yy.c: lexer.l
 lex.yy.o: lex.yy.c exec.tab.h
 
 clean:
-	rm -f exec.tab.* lex.yy.* stack.o variable_handling.o ast.o exec
+	rm -f exec.tab.* lex.yy.* stack.o variable_handling.o ast.o exec queue.o

@@ -33,69 +33,81 @@ int yydebug = 0;
 %start S
 
 //terminals
-%token 	<svar> num 
-		<str> id
+%token 	<svar> num
+		<svar> boolean
+		<svar> id
 		<type> type
+		<svar> ch
+		<svar> str
 		<str> newline
-//non-terminals
+
+%token and or xor not _if _else print _for func call pp _scanf mod _while
+
+%left or
+%left and
+%left xor
+%right not
 
 %right '='
 %left '-' '+'  
 %left '*' '/'
+%left mod
 %right '^'
 
-%type <ast> S PROG BLOCK GLVARDEF VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
+//non-terminals
+%type <ast> S PROG BLOCK GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
 %%
-S : PROG { execute_ast($1); var_dump(); print_ast($1, 0); }
+S : PROG { execute_ast($1); var_dump(); printf("MAX AST ID = %d\n", ast_id); print_ast($1, 0); }
 
 PROG : PROG GLOBAL { $$ = astnode_new(PROG);
 	 				 $$->child[0] = $1; $$->child[1] = $2; }
 	 | PROG BLOCK { $$ = astnode_new(PROG);
 	 				$$->child[0] = $1; $$->child[1] = $2; }
-	 | %empty
-
+	 | %empty { $$ = NULL; }
 //global functionality
 GLOBAL 	: GLVARDEF { $$ = astnode_new(GLOBAL);
 					 $$->child[0] = $1; }
-//	 	| FUNCDEF { $$ = astnode_new(NEXT);
-//	 				$$->child[0] = $1; }
+		| SETVAR  { $$ = astnode_new(GLOBAL);
+					$$->child[0] = $1; }
+	 	| FUNCDEF { $$ = astnode_new(GLOBAL);
+	 				$$->child[0] = $1; }
 
 GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF);
 		 			$$->child[0] = $1; }
 
 BLOCK : '%' newline SLOCAL '$' newline { $$ = astnode_new(BLOCK);
 	  									 $$->child[0] = $3;}
-
 SLOCAL 	: LOCAL SLOCAL { $$ = astnode_new(SLOCAL);
 						 $$->child[0] = $1; $$->child[1] = $2;}
 	   	| BLOCK SLOCAL2 { $$ = astnode_new(SLOCAL);
-						 $$->child[0] = $1; $$->child[1] = $2;}
-		| %empty
-
+						 $$->child[0] = $1; $$->child[1] = $2; }
+		| %empty { $$ = NULL; }
 SLOCAL2 : SLOCAL2 LOCAL { $$ = astnode_new(SLOCAL2);
 						  $$->child[0] = $1; $$->child[1] = $2;	}
-		| %empty
+		| SLOCAL2 BLOCK { $$ = astnode_new(SLOCAL2);
+						  $$->child[0] = $1; $$->child[1] = $2;	}
+		| %empty { $$ = NULL; }
 
 //local functionality
-LOCAL	: LVARDEF { $$ = astnode_new(LOCAL);
-	  				$$->child[0] = $1; }
-
+LOCAL	: LVARDEF { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| IF { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| PRINT { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| FOR { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| SETVAR { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| FUNCCALL newline { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| SCANF { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
+		| WHILE { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
 LVARDEF : VARDEF  { $$ = astnode_new(LVARDEF);
 					$$->child[0] = $1; }
 
-//FUNCDEF : 'f' id type '[' ARGS ']' newline BLOCK 
-
-
 //general functionality
-VARDEF : VARIABLE	{ $$ = astnode_new(VARDEF);
-					  $$->child[0] = $1; }
+VARDEF 	: VARIABLE newline { $$ = astnode_new(VARDEF);
+					  		 $$->child[0] = $1; }
+		| VARIABLE newline '=' STERM newline  {	$$ = astnode_new(ASSVARDEF);
+							 			$$->child[0] = $1; $$->child[1] = $4; }
 
-	    | VARIABLE '=' STERM newline  {	$$ = astnode_new(ASSVARDEF);
-							 			$$->child[0] = $1; $$->child[1] = $3; }
-
-VARIABLE: type '-' '>' id newline { $$ = astnode_new(VARIABLE);
-									$$->val.svar.type = $1; $$->val.svar.id = $4;
-									printf("VARIABLE NODE IN BISON!\n\n");}
+VARIABLE: type '-' '>' id { $$ = astnode_new(VARIABLE);
+									$$->val.svar = $4; $$->val.svar.type = $1;}
 
 STERM: type '-' '>' TERM {	$$ = astnode_new(STERM);
 	 						$$->val.type = $1; $$->child[0] = $4; }
@@ -110,8 +122,86 @@ TERM: TERM '-' TERM   { $$ = astnode_new(MINUS);
 						$$->child[0] = $1; $$->child[1] = $3; }
 	| TERM '^' TERM   { $$ = astnode_new(EXP);
 						$$->child[0] = $1; $$->child[1] = $3; }
+	| TERM mod TERM	  { $$ = astnode_new(MOD);
+						$$->child[0] = $1; $$->child[1] = $3; }
 	| num { $$ = astnode_new(NUM); $$->val.svar = $1; }
-	| id { $$ = astnode_new(GETIDVAL); $$->val.str = $1;}
+	| id { $$ = astnode_new(GETIDVAL); $$->val.svar = $1; }
+	| ch { $$ = astnode_new(CHAR); $$->val.svar = $1; }
+	| str { $$ = astnode_new(STR); $$->val.svar = $1; }
+	| boolean { $$ = astnode_new(BOOLEAN); $$->val.svar = $1; }
+	| FUNCCALL { $$ = astnode_new(RETURNCALL); $$->child[0] = $1; }
+
+IF: _if COND newline BLOCK { $$ = astnode_new(IF);
+  					 $$->child[0] = $2; $$->child[1] = $4; }
+  | _if COND newline BLOCK _else newline BLOCK { $$ = astnode_new(IFELSE);
+  					 			 $$->child[0] = $2; $$->child[1] = $4; $$->child[2] = $7; }
+
+COND : BOOLTERM { $$ = astnode_new(COND); $$->child[0] = $1; }
+
+BOOLTERM : BOOLTERM or BOOLTERM	  { $$ = astnode_new(OR); 
+		 							$$->child[0] = $1; $$->child[1] = $3;}
+		 | BOOLTERM and BOOLTERM  { $$ = astnode_new(AND);
+		 							$$->child[0] = $1; $$->child[1] = $3;}
+		 | BOOLTERM xor BOOLTERM  { $$ = astnode_new(XOR); 
+		 							$$->child[0] = $1; $$->child[1] = $3;}
+		 | 			not BOOLTERM { $$ = astnode_new(NOT); $$->child[0] = $2; }
+		 | num { $$ = astnode_new(NUM); $$->val.svar = $1; }
+		 | boolean { $$ = astnode_new(BOOLEAN); $$->val.svar = $1; }
+		 | id { $$ = astnode_new(GETIDVAL); $$->val.svar = $1; }
+		 | SCOMPARE { $$ = astnode_new(BOOLTERM); $$->child[0] = $1; }
+
+SCOMPARE : '[' COMPARE ']' { $$ = astnode_new(SCOMPARE); $$->child[0] = $2; }
+
+COMPARE : STERM '>' STERM { $$ = astnode_new(GREATER);
+		 					$$->child[0] = $1; $$->child[1] = $3;}
+		| STERM '<' STERM { $$ = astnode_new(LESS); 
+		 					$$->child[0] = $1; $$->child[1] = $3;}
+		| STERM '=' STERM { $$ = astnode_new(EQUAL);
+		 					$$->child[0] = $1; $$->child[1] = $3;}
+		| STERM '!' STERM { $$ = astnode_new(NOTEQ);
+		 					$$->child[0] = $1; $$->child[1] = $3;}
+
+PRINT : print '[' STERM ']' newline { $$ = astnode_new(PRINT);
+	  								  $$->child[0] = $3; }
+
+WHILE: _while SCOMPARE newline BLOCK { $$ = astnode_new(WHILE);
+	 								   $$->child[0] = $2; $$->child[1] = $4; }
+
+FOR: _for '[' STARTFOR SCOMPARE newline INC ']' newline BLOCK { $$ = astnode_new(FOR);
+			$$->child[0] = $3; $$->child[1] = $4; $$->child[2] = $6; $$->child[3] = $9;}
+
+STARTFOR: LVARDEF { $$ = astnode_new(STARTFOR); 
+				  $$->child[0] = $1; }
+
+INC : '+' num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $2; $$->val.svar.id = "+"; }
+	| '-' num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $2; $$->val.svar.id = "-"; }
+	| '*' num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $2; $$->val.svar.id = "*"; }
+	| '/' num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $2; $$->val.svar.id = "/"; }
+	| %empty { $$ = NULL;}
+
+SETVAR : id '=' STERM newline { $$ = astnode_new(SETVAR); 
+	   							$$->val.svar = $1; $$->child[0] = $3; }
+
+FUNCDEF : func id type '[' newline FPARAM ']' newline BLOCK { $$ = astnode_new(FUNCDEF);
+															  $$->val.svar = $2; $$->val.svar.type = $3; 
+															  $$->child[0] = $6; $$->child[1] = $9; }
+FPARAM  : FPARAM VARIABLE newline { $$ = astnode_new(FPARAM);
+	 				 				$$->child[0] = $1; $$->child[1] = $2; }
+		| %empty { $$ = NULL; }
+
+FUNCCALL: call id '[' APARAM ']'  { $$ = astnode_new(FUNCCALL);
+									$$->child[0] = $4; $$->val.svar = $2;}
+
+APARAM 	: APARAM pp STERM    { $$ = astnode_new(APARAM);
+									$$->child[0] = $1; $$->child[1] = $3; }
+	 	| %empty { $$ = NULL; }
+
+SCANF : _scanf '[' VARIABLE ']' newline { $$ = astnode_new(SCANF);
+	  									 $$->child[0] = $3; }
 
 %%
 

@@ -33,20 +33,7 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 
 	if (s) {
     // Handle multiple declaration in same block
-    // Here: Just ignore the new declaration, set new value
-    switch(type){
-		case _char:
-			s->gval.char_val = *(char *) gval;
-			break;
-		case _int:
-			s->gval.int_val = *(int *) gval;
-			break;
-		case _double:
-			s->gval.double_val = *(double *) gval;
-			break;
-		default://TODO another types
-			break;
-	}
+	runtime_error(0, "The variable is already declared in the same block\n");	
 	} else {
 	//TODO gval = strdup(gval) in case of pointer
 	switch(type){
@@ -58,21 +45,18 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 			break;
 		case _double:
     		s_push(&globals, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
-			printf("TRULALA\n");
+			break;
+		case _bool:
+    		if(*(int *) gval > 0)
+				*(int *) gval = 1;
+			else *(int *) gval = 0;
+			s_push(&globals, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
 			break;
 		case _charptr:
-    		//s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+    		s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .id = strdup(id) });
 			break;
-		case _intptr:
-    		//s_push(&globals, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
-			break;
-		case _floatptr:
-    		//s_push(&globals, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
-			break;
-		case _doubleptr:
-    		//s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
-			break;
-		default://TODO good default
+		default://TODO another types
+			assert(0);
 			break;
 	}
 	}
@@ -84,20 +68,7 @@ void* var_declare (type_t type, char *id, void* gval) {
   stackval_t *s = var_lookup (id, VAR_BORDER_BLOCK);
   if (s) {
     // Handle multiple declaration in same block
-    // Here: Just ignore the new declaration, set new value
-     switch(type){
-		case _char:
-			s->gval.char_val = *(char *) gval;
-			break;
-		case _int:
-			s->gval.int_val = *(int *) gval;
-			break;
-		case _double:
-			s->gval.double_val = *(double *) gval;
-			break;
-		default://TODO another types
-			break;
-	}   
+	runtime_error(0, "The variable is already declared in the same block\n");	
   } else {
 	//TODO gval = strdup(gval) in case of pointer
   	switch(type){
@@ -110,19 +81,17 @@ void* var_declare (type_t type, char *id, void* gval) {
 		case _double:
     		s_push(&vars, (stackval_t) { .type = type, .gval.double_val = *(double *) gval, .id = strdup(id) });
 			break;
+		case _bool:
+			if(*(int *) gval > 0)
+				*(int *) gval = 1;
+			else *(int *) gval = 0;
+			s_push(&vars, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
+			break;
 		case _charptr:
-    		//s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup(*(char **) gval), .id = strdup(id) });
+    		s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .id = strdup(id) });
 			break;
-		case _intptr:
-    		//s_push(&vars, (stackval_t) { .type = type, .gval.intptr_val = strdup(*(int **) gval), .id = strdup(id) });
-			break;
-		case _floatptr:
-    		//s_push(&vars, (stackval_t) { .type = type, .gval.floatptr_val = strdup(*(float **) gval), .id = strdup(id) });
-			break;
-		case _doubleptr:
-    		//s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = strdup(*(double **) gval), .id = strdup(id) });
-			break;
-		default://TODO good default
+		default://TODO another types
+			assert(0);
 			break;
 	}
   }
@@ -130,11 +99,12 @@ void* var_declare (type_t type, char *id, void* gval) {
   return gval;
 }
 
-void* var_set (char *id, void* gval) {
+void* var_set (char *id, void* gval, type_t expected_type) {
   stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
   if (s){
-      type_t type = s->type; 
-	  switch(type){
+	  runtime_error(s->type == expected_type,
+			  		"Uncorrect type of the assigning value to the variable\n");
+	  switch(s->type){
 		case _char:
 			s->gval.char_val = *(char *) gval;
 			break;
@@ -144,14 +114,24 @@ void* var_set (char *id, void* gval) {
 		case _double:
 			s->gval.double_val = *(double *) gval;
 			break;
-		default://TODO another types
+		case _bool:
+			if(*(int *) gval > 0)
+				*(int *) gval = 1;
+			else *(int *) gval = 0;
+			s->gval.int_val = *(int *) gval;
 			break;
+		case _charptr:
+			s->gval.charptr_val = strdup((char *) gval);
+			break;
+		default://TODO another types
+			assert(0);		
 	}
 
   } else {
     // Handle usage of undeclared variable
-    // Here: implicitly declare variable
-    //TODO JUST IGNORE var_declare(id, gval);
+	printf("id of variable = %s\n", id);
+	var_dump();
+	runtime_error(0, "The used variable is NOT declared in the block\n");	
   }
 
   return gval;
@@ -163,7 +143,7 @@ stackval_t var_get (char *id) {
 		return *s;
 	else {
     	// Handle usage of undeclared variable
-		runtime_error(1, "Detected usage of undeclared variable\n");
+		runtime_error(0, "Detected usage of undeclared variable\n");
 		return (stackval_t) {};
 	}
 }
@@ -236,7 +216,7 @@ void var_dump (void) {
 				printf("BLOCK\n");
 				break;
 			default:
-				print_gdata(run);
+				print_gdata(run->data);
 		}
 		run = run->next;
 	}
@@ -244,10 +224,28 @@ void var_dump (void) {
   	
 	run = globals.head;
 	while(run){
-		print_gdata(run);	
+		print_gdata(run->data);	
 		run = run->next;
 	}
 	printf("-- GLOBALS --\n\n");
+}
+
+void set_general_svar(stackval_t svar){
+	switch(svar.type){
+		case _char:
+			var_set(svar.id, &( (char) {svar.gval.char_val}), svar.type);	
+			break;
+		case _int:
+		case _bool:
+			var_set(svar.id, &( (int) {svar.gval.int_val}), svar.type);	
+			break;
+		case _double:
+			var_set(svar.id, &( (double) {svar.gval.double_val}), svar.type);	
+			break;
+		case _charptr:
+			var_set(svar.id, &( (char*) {svar.gval.charptr_val}), svar.type);	
+			break;
+	}
 }
 
 void set_general_svar_zero(stackval_t* svar){
@@ -256,16 +254,21 @@ void set_general_svar_zero(stackval_t* svar){
 			svar->gval.char_val = '\0';
 			break;
 		case _int:
+		case _bool:
 			svar->gval.int_val = 0;
 			break;
 		case _double:
 			svar->gval.double_val = 0.0;
+			break;
+		case _charptr:
+			svar->gval.charptr_val = NULL;
 			break;
 	}
 
 }
 
 void var_declare_general_zero(stackval_t svar, char mod){
+	assert(mod == 'g' || mod == 'l');
 	switch(svar.type){
 		case _char:
 			if(mod == 'g')
@@ -282,19 +285,32 @@ void var_declare_general_zero(stackval_t svar, char mod){
 				var_declare_global(svar.type, svar.id, &( (double) {0.0} ));
 			else var_declare(svar.type, svar.id, &( (double) {0.0} ));
 			break;
+		case _bool:
+			if(mod == 'g')
+				var_declare_global(svar.type, svar.id, &( (int) {0} ));
+			else var_declare(svar.type, svar.id, &( (int) {0} ));
+			break;
+		case _charptr:
+			if(mod == 'g')
+				var_declare_global(svar.type, svar.id, NULL);
+			else var_declare(svar.type, svar.id, NULL);
+			break;
 	}
 
 		
 }
 
 void var_declare_general_val(stackval_t svar, char mod){
-	//TODO runtime error mod != g != l	
-
+	assert(mod == 'g' || mod == 'l');
 	if(mod == 'g')
 		var_declare_global(svar.type, svar.id, &svar.gval);
-	else
-		var_declare(svar.type, svar.id, &svar.gval);
+	else {
+		if(svar.type == _charptr)
+			var_declare(svar.type, svar.id, (void *) svar.gval.charptr_val);
+		else
+			var_declare(svar.type, svar.id, &svar.gval);
 
+	}
 }
 
 #ifdef TEST

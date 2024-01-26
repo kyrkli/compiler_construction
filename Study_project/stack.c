@@ -50,27 +50,26 @@ void runtime_error(int cond, char* msg){
 	}
 }
 
-void print_gdata(node_t* node){
-	switch(node->data.type){
+void print_gdata(stackval_t data){
+	switch(data.type){
     	case _char:
-        	printf("(type = %d, id = %s, val = %c)\n", node->data.type, node->data.id, node->data.gval.char_val);
+        	printf("(type = %d, id = %s, val = %c)\n", data.type, data.id, data.gval.char_val);
             break;
         case _int:
-          	printf("(type = %d, id = %s, val = %d)\n", node->data.type, node->data.id, node->data.gval.int_val);
+          	printf("(type = %d, id = %s, val = %d)\n", data.type, data.id, data.gval.int_val);
     	    break;
   	    case _double:
-            printf("(type = %d, id = %s, val = %f)\n", node->data.type, node->data.id, node->data.gval.double_val);
+            printf("(type = %d, id = %s, val = %f)\n", data.type, data.id, data.gval.double_val);
             break;
-        case _charptr:
-           	printf("(type = %d, id = %s, ptr = %p -> val = %c)\n", node->data.type, node->data.id, (void *) node->data.gval.charptr_val, *(node->data.gval.charptr_val));
+		case _bool:
+          	printf("(type = %d, id = %s, val = %d)\n", data.type, data.id, data.gval.int_val);
+    	    break;
+		case _charptr:
+           	printf("(type = %d, id = %s, ptr = %p -> val = %s)\n", data.type, data.id, (void *) data.gval.charptr_val, data.gval.charptr_val);
             break;
-        case _intptr:
-            printf("(type = %d, id = %s, ptr = %p -> val = %d)\n", node->data.type, node->data.id, (void *) node->data.gval.intptr_val, *(node->data.gval.intptr_val));
-            break;
-      	case _doubleptr:
-     		printf("(type = %d, id = %s, ptr = %p -> val = %f)\n", node->data.type, node->data.id, (void *) node->data.gval.doubleptr_val, *(node->data.gval.doubleptr_val));
-            break;
-    	default: assert(0);
+    	default: 
+			printf("type = %d\n", data.type);
+			assert(0);
    }
 }
 
@@ -78,7 +77,7 @@ void show_stack(stack_t *s) {
 	node_t *run = s->head;
 	
 	while(run != NULL){
-   		print_gdata(run);
+   		print_gdata(run->data);
 		run = run->next;	
 	}
 }
