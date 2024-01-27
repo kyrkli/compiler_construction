@@ -76,7 +76,10 @@ not { printf("not\n"); return not; }
 
 mod { printf("mod\n"); return mod; }
 
+-> { printf("arrow\n"); return arrow; }
 p: { printf("p:\n"); return pp;}
+el: { printf("el:\n"); return el;}
+
 SCANF { printf("SCANF\n"); return _scanf; }
 CALL { printf("CALL\n"); return call;}
 FUNC { printf("FUNC\n"); return func;}

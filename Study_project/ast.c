@@ -10,6 +10,7 @@
 //for keywords @$ = @1 etc with yylinenumber
 
 Queue qparam;
+Queue arr_el;
 
 astnode_t* declared_functions[MAX_DECLARED_FUNC];
 
@@ -28,7 +29,7 @@ stackval_t execute_ast (astnode_t *root) {
 	if(root == NULL)
 		return (stackval_t) {};
 
-	//printf("\nstart of execute ast, node = %s,\t\tast_id = %d\n", node2str(root), root->id);
+	printf("\nstart of execute ast, node = %s,\t\tast_id = %d\n", node2str(root), root->id);
 	//print_gdata(root->val.svar);
 	switch (root->type) { 
 		case PROG:
@@ -40,6 +41,33 @@ stackval_t execute_ast (astnode_t *root) {
 			return root->val.svar;
 		case GLVARDEF: 
 			root->val.svar = execute_ast(root->child[0]);
+			switch(root->val.svar.type){
+				case _char:
+				case _int:
+				case _bool:
+				case _double:
+				case _charptr:
+					break;
+				case _intptr:
+				case _boolptr:
+					//create array
+					root->val.svar.gval.intptr_val = createArray(root->val.svar.type, root->val.svar.size);
+					
+					//initialize array (if needed)
+					if(!isEmpty(&arr_el))
+						initArray(root->val.svar);
+					
+					break;
+				case _doubleptr:
+					root->val.svar.gval.doubleptr_val = createArray(root->val.svar.type, root->val.svar.size);
+					
+					if(!isEmpty(&arr_el))
+						initArray(root->val.svar);
+					
+					break;
+
+			}
+
 			var_declare_general_val(root->val.svar, 'g');
 			return root->val.svar;
 		case BLOCK:
@@ -118,6 +146,47 @@ stackval_t execute_ast (astnode_t *root) {
 			root->val.svar  = execute_ast(root->child[1]); //type and value, in some cases has also id
 			enqueue(&qparam, root->val.svar);
 			return root->val.svar;
+		case SETARR:
+			//get type and value for variable
+			stackval_t index1 = execute_ast(root->child[0]);
+			stackval_t newval1 = execute_ast(root->child[1]);
+			
+			runtime_error(index1.type == _int,
+						  "Index of array must be an integer\n");
+
+			newval1.id = root->val.svar.id;
+			set_general_svar(newval1, index1.gval.int_val);
+			root->val.svar = newval1;
+			return root->val.svar;
+		case GETARRVAL:
+			root->val.svar = execute_ast(root->child[0]);
+			return root->val.svar;
+		case GETARR:
+			//arr pointer
+			root->val.svar = var_get(root->val.svar.id);
+			
+			stackval_t index = execute_ast(root->child[0]);
+
+			runtime_error(index.type == _int,
+						  "Index of array must be an integer\n");
+			runtime_error(index.gval.int_val >= 0 && index.gval.int_val < root->val.svar.size,
+						  "Index of array must be between 0 and size of the array\n");
+			
+			//get value
+			switch(root->val.svar.type){
+				case _boolptr:
+				case _intptr:
+					int* iarr = root->val.svar.gval.intptr_val;
+					root->val.svar = (stackval_t) { .type = _int, .gval.int_val = iarr[index.gval.int_val]};
+					break;
+				case _doubleptr:
+					double* darr = root->val.svar.gval.doubleptr_val;
+					root->val.svar = (stackval_t) { .type = _double, .gval.double_val = darr[index.gval.int_val]};
+					break;
+				default:
+					assert(0);
+			}
+			return root->val.svar;
 		case SLOCAL2:
 			execute_ast(root->child[0]);
 			root->val.svar = execute_ast(root->child[1]);
@@ -127,6 +196,34 @@ stackval_t execute_ast (astnode_t *root) {
 			return root->val.svar;
 		case LVARDEF:
 			root->val.svar = execute_ast(root->child[0]);
+			
+			switch(root->val.svar.type){
+				case _char:
+				case _int:
+				case _bool:
+				case _double:
+				case _charptr:
+					break;
+				case _intptr:
+				case _boolptr:
+					//create array
+					root->val.svar.gval.intptr_val = createArray(root->val.svar.type, root->val.svar.size);
+					
+					//initialize array (if needed)
+					if(!isEmpty(&arr_el))
+						initArray(root->val.svar);
+					
+					break;
+				case _doubleptr:
+					root->val.svar.gval.doubleptr_val = createArray(root->val.svar.type, root->val.svar.size);
+					
+					if(!isEmpty(&arr_el))
+						initArray(root->val.svar);
+					
+					break;
+
+			}
+
 			var_declare_general_val(root->val.svar, 'l');
 			return root->val.svar;
 		case VARDEF:
@@ -154,7 +251,7 @@ stackval_t execute_ast (astnode_t *root) {
 				root->val.svar.gval = root->child[1]->val.svar.gval;
 			return root->val.svar;
 		case SCANF:
-			root->val.svar = my_scanf(execute_ast(root->child[0]));
+			root->val.svar = my_scanf(execute_ast(root->child[0]), 0);
 			return root->val.svar;
 		case VARIABLE:
 			return root->val.svar; 
@@ -245,7 +342,7 @@ stackval_t execute_ast (astnode_t *root) {
 			//get type and value for variable
 			stackval_t newval = execute_ast(root->child[0]);
 			newval.id = root->val.svar.id;
-			set_general_svar(newval);
+			set_general_svar(newval, 0);
 			root->val.svar = newval;
 			return root->val.svar;
 		case PRINT:
@@ -265,6 +362,52 @@ stackval_t execute_ast (astnode_t *root) {
 					printf("%s\n", root->val.svar.gval.charptr_val);
 					break;
 			}
+			return root->val.svar;
+		case ARRDEF:
+			root->val.svar = execute_ast(root->child[0]); //get type id and size
+			root->val.svar.type = set_type_arr(root->val.svar); //from int to int* for example
+			return root->val.svar;
+		case ARRASS:
+			stackval_t type_id_len = execute_ast(root->child[0]);	
+			
+			//creating queue for assigned elements
+			execute_ast(root->child[1]);
+		
+			runtime_error(type_id_len.type == peek(&arr_el).type,
+						  "The type of the array must be matched to the assigned elements\n");
+			
+			root->val.svar = type_id_len;
+			root->val.svar.type = set_type_arr(root->val.svar); //from int to int* for example
+			return root->val.svar;
+		case ARRAY:
+			stackval_t type_id = execute_ast(root->child[0]);
+			stackval_t size = execute_ast(root->child[1]);
+			root->val.svar = type_id;
+			root->val.svar.size = size.size;
+			return root->val.svar;
+		case LENGTH:
+			stackval_t length = execute_ast(root->child[0]);
+			
+			runtime_error(length.type == _int,
+						 "The length of array must have int data type\n");
+			runtime_error(length.gval.int_val > 0,
+						 "The minimum length of array must be 1\n");
+			
+			root->val.svar.size = length.gval.int_val;
+			return root->val.svar;
+		case ELEMENTS:
+			stackval_t left_el = execute_ast(root->child[0]);
+			stackval_t right_el = execute_ast(root->child[1]);
+			
+			runtime_error(left_el.type == right_el.type,
+						 "The elements of the array must have the same data type\n");
+
+			root->val.svar = right_el;	
+			enqueue(&arr_el, root->val.svar);
+			return root->val.svar;
+		case ELEMENT:
+			root->val.svar = execute_ast(root->child[0]);
+			enqueue(&arr_el, root->val.svar);
 			return root->val.svar;
 		case STERM: 
 			stackval_t saved = execute_ast(root->child[0]);
@@ -329,10 +472,91 @@ stackval_t execute_ast (astnode_t *root) {
 	return (stackval_t) {};
 }
 
+void* createArray(type_t type, int size) {
+	void *arr;
+	switch(type){
+		case _intptr:
+		case _boolptr:
+			arr = (int *) malloc(size * sizeof(int));
+			break;
+		case _doubleptr:
+			arr = (double *) malloc(size * sizeof(double));
+			break;
+		default:
+			assert(0);
+	}
+	
+	if (!arr) {
+        perror("Memory allocation failed\n");
+        exit(1);
+    }
+	return arr;
+}
+
+void initArray(stackval_t sarr){
+	
+	for(int i = 0; i < sarr.size; i++){
+		runtime_error(!isEmpty(&arr_el),
+					  "Too less elements for definition of array\n");
+		switch(sarr.type){
+			case _intptr:
+				int* intArr = sarr.gval.intptr_val;
+				intArr[i] = dequeue(&arr_el).gval.int_val;
+				break;
+			case _boolptr:
+				int* boolArr = sarr.gval.intptr_val;
+				boolArr[i] = dequeue(&arr_el).gval.int_val;
+				break;
+			case _doubleptr:
+				double* doubleArr = sarr.gval.doubleptr_val;
+				doubleArr[i] = dequeue(&arr_el).gval.double_val;
+				break;
+			default:
+				assert(0);
+		}
+	}
+	runtime_error(isEmpty(&arr_el),
+				  "Too many elements for definition of array\n");
+}
+
+type_t set_type_arr(stackval_t arr){
+	switch(arr.type){
+		case _char:
+			return _charptr;
+		case _int:
+			return _intptr;
+		case _double:
+			return _doubleptr;
+		case _bool:
+			return _boolptr;
+		default:
+			assert(0);
+			return _error;
+	}
+}
+
 char* node2str(astnode_t* node){
 	switch(node->type){
 		case PROG:
 			return "PROG";
+		case GETARRVAL:
+			return "GETARRVAL";
+		case GETARR:
+			return "GETARR";
+		case SETARR:
+			return "SETARR";
+		case ELEMENT:
+			return "ELEMENT";
+		case ELEMENTS:
+			return "ELEMENTS";
+		case ARRAY:
+			return "ARRAY";
+		case ARRDEF:
+			return "ARRDEF";
+		case ARRASS:
+			return "ARRASS";
+		case LENGTH:
+			return "LENGTH";
 		case MOD:
 			return "MOD";
 		case WHILE:
@@ -430,7 +654,6 @@ char* node2str(astnode_t* node){
 		case EXP:
 			return "EXP";
 	}
-	return NULL;
 }
 
 void print_ast(astnode_t *root, int depth) {
@@ -592,48 +815,48 @@ stackval_t increment(type_t type, char* id, char op, stackval_t base, stackval_t
 	switch(op){
 		case '+':
 			if(type == _int){
-				var_set(id, & (int) {base.gval.int_val + inc.gval.int_val}, type);
+				var_set(id, & (int) {base.gval.int_val + inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val + inc.gval.int_val;
 				return base;
 			} else {
-				var_set(id, & (double) {base.gval.double_val + inc.gval.double_val}, type);
+				var_set(id, & (double) {base.gval.double_val + inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val + inc.gval.double_val;
 				return base;
 			}
 		case '-':
 			if(type == _int){
-				var_set(id, & (int) {base.gval.int_val - inc.gval.int_val}, type);
+				var_set(id, & (int) {base.gval.int_val - inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val - inc.gval.int_val;
 				return base;
 			} else {
-				var_set(id, & (double) {base.gval.double_val - inc.gval.double_val}, type);
+				var_set(id, & (double) {base.gval.double_val - inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val - inc.gval.double_val;
 				return base;
 			}
 		case '*':
 			if(type == _int){
-				var_set(id, & (int) {base.gval.int_val * inc.gval.int_val}, type);
+				var_set(id, & (int) {base.gval.int_val * inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val * inc.gval.int_val;
 				return base;
 			} else {
-				var_set(id, & (double) {base.gval.double_val * inc.gval.double_val}, type);
+				var_set(id, & (double) {base.gval.double_val * inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val * inc.gval.double_val;
 				return base;
 			}
 		case '/':
 			if(type == _int){
-				var_set(id, & (int) {base.gval.int_val / inc.gval.int_val}, type);
+				var_set(id, & (int) {base.gval.int_val / inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val / inc.gval.int_val;
 				return base;
 			} else {
-				var_set(id, & (double) {base.gval.double_val / inc.gval.double_val}, type);
+				var_set(id, & (double) {base.gval.double_val / inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val / inc.gval.double_val;
 				return base;
 			}
 	}
 }
 
-stackval_t my_scanf(stackval_t data){
+stackval_t my_scanf(stackval_t data, int index){
 	int isSuccess = 0;
 	switch(data.type){
 		case _char:
@@ -644,7 +867,7 @@ stackval_t my_scanf(stackval_t data){
 						  "Invalid input\n");
 			
 			printf("You entered: %c\n", data.gval.char_val);
-			set_general_svar(data);
+			set_general_svar(data, index);
 			break;
 		case _int:
 			printf("Enter an integer: ");
@@ -654,7 +877,7 @@ stackval_t my_scanf(stackval_t data){
 						  "Invalid input\n");
 		
 			printf("You entered: %d\n", data.gval.int_val);
-			set_general_svar(data);
+			set_general_svar(data, index);
 			break;		
 		case _bool:
 			printf("Enter a bool (0 or 1): ");
@@ -666,7 +889,7 @@ stackval_t my_scanf(stackval_t data){
 						  "Bool value can be filled only with 0 or 1\n");	
 			
 			printf("You entered: %d\n", data.gval.int_val);
-			set_general_svar(data);
+			set_general_svar(data, index);
 			break;
 		case _double:
 			printf("Enter a real: ");
@@ -676,7 +899,7 @@ stackval_t my_scanf(stackval_t data){
 						  "Invalid input\n");
 	
 			printf("You entered: %lf\n", data.gval.double_val);
-			set_general_svar(data);
+			set_general_svar(data, index);
 			break;
 		case _charptr:
 			printf("Enter a string: ");
@@ -686,7 +909,7 @@ stackval_t my_scanf(stackval_t data){
 						  "Invalid input\n");
 			
 			printf("You entered: %s\n", data.gval.charptr_val);
-			set_general_svar(data);
+			set_general_svar(data, index);
 			break;
 	}
 	return data;

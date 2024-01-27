@@ -31,10 +31,18 @@ FUNC hailstone real [
 	PRINT[string->str(Counter of steps:)end]
 	PRINT[int->counter]
 $
+int->nums->int->6
+=[el:int->5 el:int->4 el:int->3 el:int->2 el:int->1 el:int->491291]
 %
 	int->newval
 	=int->10
 	int->abc123
-	=int->5
+	=int->nums[int->5]
 	real->rReturn
+	nums[int->1] = int->11111
+	nums[int->2] = int->22222
+	nums[int->3] = int->33333
+	int->ints->int->3
+	=[el:int->23 el:int->49 el:int->2451]
+	ints[int->0] = int->nums[int->5]
 $

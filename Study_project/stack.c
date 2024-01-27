@@ -67,10 +67,58 @@ void print_gdata(stackval_t data){
 		case _charptr:
            	printf("(type = %d, id = %s, ptr = %p -> val = %s)\n", data.type, data.id, (void *) data.gval.charptr_val, data.gval.charptr_val);
             break;
-    	default: 
+		case _intptr:
+		case _boolptr:
+           	printf("(type = %d, id = %s, ptr = %p -> first element = %d):\n", data.type, data.id, (void *) data.gval.intptr_val, data.gval.intptr_val[0]);
+            printArray(data);
+			break;
+		case _doubleptr:
+			printf("(type = %d, id = %s, ptr = %p -> first element = %f):\n", data.type, data.id, (void *) data.gval.doubleptr_val, data.gval.doubleptr_val[0]);
+            printArray(data);
+			break;
+		default: 
 			printf("type = %d\n", data.type);
 			assert(0);
    }
+}
+
+void printArray(stackval_t sarr) {
+	runtime_error(sarr.size > 0,
+				  "Size of array is < 1\n");
+
+/*	switch(sarr.type){
+		case _intptr:
+			printf("int array: \n");
+			break;
+		case _boolptr:
+			printf("bool array: \n");
+			break;
+		case _doubleptr:
+			printf("real array: \n");
+			break;
+		default:
+			assert(0);
+	}
+*/
+	for(int i = 0; i < sarr.size; i++){
+		switch(sarr.type){
+			case _intptr:
+				int* intArr = sarr.gval.intptr_val;
+				printf("[%d]:%d -> ", i, intArr[i]);
+				break;
+			case _boolptr:
+				int* boolArr = sarr.gval.intptr_val;
+				printf("[%d]:%d -> ", i, boolArr[i]);
+				break;
+			case _doubleptr:
+				double* doubleArr = sarr.gval.doubleptr_val;
+				printf("[%d]:%f -> ", i, doubleArr[i]);
+				break;
+			default:
+				assert(0);
+		}
+	}
+	printf("NULL\n");
 }
 
 void show_stack(stack_t *s) {

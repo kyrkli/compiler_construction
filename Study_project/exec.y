@@ -41,7 +41,7 @@ int yydebug = 0;
 		<svar> str
 		<str> newline
 
-%token and or xor not _if _else print _for func call pp _scanf mod _while
+%token and or xor not _if _else print _for func call pp _scanf mod _while arrow el
 
 %left or
 %left and
@@ -55,7 +55,7 @@ int yydebug = 0;
 %right '^'
 
 //non-terminals
-%type <ast> S PROG BLOCK GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
+%type <ast> S PROG BLOCK ARRDEF GETARR ARRAY LENGTH ELEMENTS GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
 %%
 S : PROG { execute_ast($1); var_dump(); printf("MAX AST ID = %d\n", ast_id); print_ast($1, 0); }
 
@@ -72,10 +72,10 @@ GLOBAL 	: GLVARDEF { $$ = astnode_new(GLOBAL);
 	 	| FUNCDEF { $$ = astnode_new(GLOBAL);
 	 				$$->child[0] = $1; }
 
-GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF);
-		 			$$->child[0] = $1; }
+GLVARDEF : VARDEF { $$ = astnode_new(GLVARDEF); $$->child[0] = $1; }
+		 | ARRDEF { $$ = astnode_new(GLVARDEF); $$->child[0] = $1; }
 
-BLOCK : '%' newline SLOCAL '$' newline { $$ = astnode_new(BLOCK);
+BLOCK 	: '%' newline SLOCAL '$' newline { $$ = astnode_new(BLOCK);
 	  									 $$->child[0] = $3;}
 SLOCAL 	: LOCAL SLOCAL { $$ = astnode_new(SLOCAL);
 						 $$->child[0] = $1; $$->child[1] = $2;}
@@ -97,20 +97,20 @@ LOCAL	: LVARDEF { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
 		| FUNCCALL newline { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
 		| SCANF { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
 		| WHILE { $$ = astnode_new(LOCAL); $$->child[0] = $1; }
-LVARDEF : VARDEF  { $$ = astnode_new(LVARDEF);
-					$$->child[0] = $1; }
 
+LVARDEF : VARDEF { $$ = astnode_new(LVARDEF); $$->child[0] = $1; }
+		| ARRDEF { $$ = astnode_new(LVARDEF); $$->child[0] = $1; }
 //general functionality
 VARDEF 	: VARIABLE newline { $$ = astnode_new(VARDEF);
 					  		 $$->child[0] = $1; }
 		| VARIABLE newline '=' STERM newline  {	$$ = astnode_new(ASSVARDEF);
 							 			$$->child[0] = $1; $$->child[1] = $4; }
 
-VARIABLE: type '-' '>' id { $$ = astnode_new(VARIABLE);
-									$$->val.svar = $4; $$->val.svar.type = $1;}
+VARIABLE: type arrow id { $$ = astnode_new(VARIABLE);
+									$$->val.svar = $3; $$->val.svar.type = $1;}
 
-STERM: type '-' '>' TERM {	$$ = astnode_new(STERM);
-	 						$$->val.type = $1; $$->child[0] = $4; }
+STERM: type arrow TERM {	$$ = astnode_new(STERM);
+	 						$$->val.type = $1; $$->child[0] = $3; }
 
 TERM: TERM '-' TERM   { $$ = astnode_new(MINUS);
 						$$->child[0] = $1; $$->child[1] = $3; }
@@ -130,6 +130,9 @@ TERM: TERM '-' TERM   { $$ = astnode_new(MINUS);
 	| str { $$ = astnode_new(STR); $$->val.svar = $1; }
 	| boolean { $$ = astnode_new(BOOLEAN); $$->val.svar = $1; }
 	| FUNCCALL { $$ = astnode_new(RETURNCALL); $$->child[0] = $1; }
+	| GETARR { $$ = astnode_new(GETARRVAL); $$->child[0] = $1;}
+
+GETARR: id '[' STERM ']' { $$ = astnode_new(GETARR); $$->val.svar = $1; $$->child[0] = $3;}
 
 IF: _if COND newline BLOCK { $$ = astnode_new(IF);
   					 $$->child[0] = $2; $$->child[1] = $4; }
@@ -185,6 +188,8 @@ INC : '+' num { $$ = astnode_new(INC);
 
 SETVAR : id '=' STERM newline { $$ = astnode_new(SETVAR); 
 	   							$$->val.svar = $1; $$->child[0] = $3; }
+	   | id '[' STERM ']' '=' STERM newline   { $$ = astnode_new(SETARR); $$->val.svar = $1; 
+												$$->child[0] = $3; $$->child[1] = $6; }
 
 FUNCDEF : func id type '[' newline FPARAM ']' newline BLOCK { $$ = astnode_new(FUNCDEF);
 															  $$->val.svar = $2; $$->val.svar.type = $3; 
@@ -203,6 +208,19 @@ APARAM 	: APARAM pp STERM    { $$ = astnode_new(APARAM);
 SCANF : _scanf '[' VARIABLE ']' newline { $$ = astnode_new(SCANF);
 	  									 $$->child[0] = $3; }
 
+ARRDEF  : ARRAY newline { $$ = astnode_new(ARRDEF); $$->child[0] = $1; }
+
+		| ARRAY newline '=' '[' ELEMENTS ']' newline { $$ = astnode_new(ARRASS);
+												$$->child[0] = $1; $$->child[1] = $5; }
+
+ARRAY : VARIABLE arrow LENGTH { $$ = astnode_new(ARRAY);
+		 						$$->child[0] = $1; $$->child[1] = $3; }
+
+LENGTH : STERM { $$ = astnode_new(LENGTH); $$->child[0] = $1; }
+
+ELEMENTS : ELEMENTS el STERM  { $$ = astnode_new(ELEMENTS);
+		 						$$->child[0] = $1;  $$->child[1] = $3; }
+		 | el STERM { $$ = astnode_new(ELEMENT); $$->child[0] = $2; }
 %%
 
 int main(){

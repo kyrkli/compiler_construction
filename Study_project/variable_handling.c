@@ -28,7 +28,7 @@ static stackval_t *var_lookup (char *id, int border) {
 	return NULL;
 }
 
-void* var_declare_global (type_t type, char *id, void* gval) {
+void* var_declare_global (type_t type, char *id, void* gval, int size) {
 	stackval_t *s = var_lookup (id, 0);
 
 	if (s) {
@@ -53,7 +53,14 @@ void* var_declare_global (type_t type, char *id, void* gval) {
 			s_push(&globals, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
 			break;
 		case _charptr:
-    		s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .id = strdup(id) });
+    		s_push(&globals, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .size = size, .id = strdup(id) });
+			break;
+		case _boolptr:
+		case _intptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.intptr_val = (int *) gval, .size = size, .id = strdup(id) });
+			break;
+		case _doubleptr:
+    		s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = (double *) gval, .size = size, .id = strdup(id) });
 			break;
 		default://TODO another types
 			assert(0);
@@ -64,7 +71,7 @@ void* var_declare_global (type_t type, char *id, void* gval) {
   return gval;
 }
 
-void* var_declare (type_t type, char *id, void* gval) {
+void* var_declare (type_t type, char *id, void* gval, int size) {
   stackval_t *s = var_lookup (id, VAR_BORDER_BLOCK);
   if (s) {
     // Handle multiple declaration in same block
@@ -88,7 +95,14 @@ void* var_declare (type_t type, char *id, void* gval) {
 			s_push(&vars, (stackval_t) { .type = type, .gval.int_val = *(int *) gval, .id = strdup(id) });
 			break;
 		case _charptr:
-    		s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .id = strdup(id) });
+    		s_push(&vars, (stackval_t) { .type = type, .gval.charptr_val = strdup((char *) gval), .size = size, .id = strdup(id) });
+			break;
+		case _boolptr:
+		case _intptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.intptr_val = (int *) gval, .size = size, .id = strdup(id) });
+			break;
+		case _doubleptr:
+    		s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = (double *) gval, .size = size, .id = strdup(id) });
 			break;
 		default://TODO another types
 			assert(0);
@@ -99,11 +113,48 @@ void* var_declare (type_t type, char *id, void* gval) {
   return gval;
 }
 
-void* var_set (char *id, void* gval, type_t expected_type) {
+void* var_set (char *id, void* gval, type_t expected_type, int index) {
   stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
   if (s){
-	  runtime_error(s->type == expected_type,
-			  		"Uncorrect type of the assigning value to the variable\n");
+	  printf("s->type = %d; expected type = %d\n", s->type, expected_type);
+	 
+	  switch(s->type){
+		case _char:
+		case _int:
+		case _double:
+		case _bool:
+		case _charptr:
+			runtime_error(s->type == expected_type,
+				   		 "Uncorrect type of the assigning value to the variable\n");
+			break;
+		case _intptr:
+		case _doubleptr:
+		case _boolptr:
+			runtime_error(index >= 0 && index < s->size,
+						  "Index of array must be between 0 and size of the array\n");
+	  		break;
+	  	default: 
+			assert(0);
+	  }
+
+	  switch(s->type){
+		case _intptr:
+			runtime_error(expected_type == _int,
+				   		 "Only int can be assigned to the int array. Uncorrect type of the assigning value to the variable\n");
+			break;
+		case _doubleptr:
+			runtime_error(expected_type == _double,
+				   		 "Only double can be assigned to the double array. Uncorrect type of the assigning value to the variable\n");
+			break;
+		case _boolptr:
+			runtime_error(expected_type == _int || expected_type == _bool,
+				   		 "Only bool and int can be assigned to the bool array. Uncorrect type of the assigning value to the variable\n");
+			break;
+		default:
+			break;
+	  }
+
+
 	  switch(s->type){
 		case _char:
 			s->gval.char_val = *(char *) gval;
@@ -121,11 +172,29 @@ void* var_set (char *id, void* gval, type_t expected_type) {
 			s->gval.int_val = *(int *) gval;
 			break;
 		case _charptr:
+			printf("Hello charptr gval = %s\n", (char *) gval);
 			s->gval.charptr_val = strdup((char *) gval);
+			break;
+		case _intptr:
+			int* iarr = s->gval.intptr_val;
+			iarr[index] = *(int *) gval;
+			break;
+		case _boolptr:
+			int* barr = s->gval.intptr_val;
+			
+			if(*(int *) gval > 0)
+				*(int *) gval = 1;
+			else *(int *) gval = 0;
+
+			barr[index] = *(int *) gval;
+			break;
+		case _doubleptr:
+			double* darr = s->gval.doubleptr_val;
+			darr[index] = *(double *) gval;
 			break;
 		default://TODO another types
 			assert(0);		
-	}
+		}
 
   } else {
     // Handle usage of undeclared variable
@@ -230,21 +299,30 @@ void var_dump (void) {
 	printf("-- GLOBALS --\n\n");
 }
 
-void set_general_svar(stackval_t svar){
+void set_general_svar(stackval_t svar, int index){
 	switch(svar.type){
 		case _char:
-			var_set(svar.id, &( (char) {svar.gval.char_val}), svar.type);	
+			var_set(svar.id, &( (char) {svar.gval.char_val}), svar.type, index);	
 			break;
 		case _int:
 		case _bool:
-			var_set(svar.id, &( (int) {svar.gval.int_val}), svar.type);	
+			var_set(svar.id, &( (int) {svar.gval.int_val}), svar.type, index);	
 			break;
 		case _double:
-			var_set(svar.id, &( (double) {svar.gval.double_val}), svar.type);	
+			var_set(svar.id, &( (double) {svar.gval.double_val}), svar.type, index);	
 			break;
 		case _charptr:
-			var_set(svar.id, &( (char*) {svar.gval.charptr_val}), svar.type);	
+			var_set(svar.id, (char*) {svar.gval.charptr_val}, svar.type, index);
 			break;
+		case _intptr:
+		case _boolptr:
+			var_set(svar.id, (int*) {svar.gval.intptr_val}, svar.type, index);
+			break;
+		case _doubleptr:
+			var_set(svar.id, (double*) {svar.gval.doubleptr_val}, svar.type, index);	
+			break;
+		default :
+			assert(0);
 	}
 }
 
@@ -272,28 +350,28 @@ void var_declare_general_zero(stackval_t svar, char mod){
 	switch(svar.type){
 		case _char:
 			if(mod == 'g')
-				var_declare_global(svar.type, svar.id, &( (char) {'\0'} ));
-			else var_declare(svar.type, svar.id, &( (char) {'\0'} ));
+				var_declare_global(svar.type, svar.id, &( (char) {'\0'} ), svar.size);
+			else var_declare(svar.type, svar.id, &( (char) {'\0'} ), svar.size);
 			break;
 		case _int:
 			if(mod == 'g')
-				var_declare_global(svar.type, svar.id, &( (int) {0} ));
-			else var_declare(svar.type, svar.id, &( (int) {0} ));
+				var_declare_global(svar.type, svar.id, &( (int) {0} ), svar.size);
+			else var_declare(svar.type, svar.id, &( (int) {0} ), svar.size);
 			break;
 		case _double:
 			if(mod == 'g')
-				var_declare_global(svar.type, svar.id, &( (double) {0.0} ));
-			else var_declare(svar.type, svar.id, &( (double) {0.0} ));
+				var_declare_global(svar.type, svar.id, &( (double) {0.0} ), svar.size);
+			else var_declare(svar.type, svar.id, &( (double) {0.0} ), svar.size);
 			break;
 		case _bool:
 			if(mod == 'g')
-				var_declare_global(svar.type, svar.id, &( (int) {0} ));
-			else var_declare(svar.type, svar.id, &( (int) {0} ));
+				var_declare_global(svar.type, svar.id, &( (int) {0} ), svar.size);
+			else var_declare(svar.type, svar.id, &( (int) {0} ), svar.size);
 			break;
 		case _charptr:
 			if(mod == 'g')
-				var_declare_global(svar.type, svar.id, NULL);
-			else var_declare(svar.type, svar.id, NULL);
+				var_declare_global(svar.type, svar.id, NULL, svar.size);
+			else var_declare(svar.type, svar.id, NULL, svar.size);
 			break;
 	}
 
@@ -302,14 +380,49 @@ void var_declare_general_zero(stackval_t svar, char mod){
 
 void var_declare_general_val(stackval_t svar, char mod){
 	assert(mod == 'g' || mod == 'l');
-	if(mod == 'g')
-		var_declare_global(svar.type, svar.id, &svar.gval);
+	if(mod == 'g') {
+		switch(svar.type){
+				case _char:
+				case _int:
+				case _bool:
+				case _double:
+					var_declare_global(svar.type, svar.id, &svar.gval, svar.size);
+					break;
+				case _charptr:
+					var_declare_global(svar.type, svar.id, (void *) svar.gval.charptr_val, strlen(svar.gval.charptr_val));
+					break;
+				case _boolptr:
+				case _intptr:
+					var_declare_global(svar.type, svar.id, (void *) svar.gval.intptr_val, svar.size);
+					break;
+				case _doubleptr:
+					var_declare_global(svar.type, svar.id, (void *) svar.gval.doubleptr_val, svar.size);
+					break;
+				default:
+					assert(0);
+			}
+	}
 	else {
-		if(svar.type == _charptr)
-			var_declare(svar.type, svar.id, (void *) svar.gval.charptr_val);
-		else
-			var_declare(svar.type, svar.id, &svar.gval);
-
+		switch(svar.type){
+				case _char:
+				case _int:
+				case _bool:
+				case _double:
+					var_declare(svar.type, svar.id, &svar.gval, svar.size);
+					break;
+				case _charptr:
+					var_declare(svar.type, svar.id, (void *) svar.gval.charptr_val, strlen(svar.gval.charptr_val));
+					break;
+				case _boolptr:
+				case _intptr:
+					var_declare(svar.type, svar.id, (void *) svar.gval.intptr_val, svar.size);
+					break;
+				case _doubleptr:
+					var_declare(svar.type, svar.id, (void *) svar.gval.doubleptr_val, svar.size);
+					break;
+				default:
+					assert(0);
+			}
 	}
 }
 

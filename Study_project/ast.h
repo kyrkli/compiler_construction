@@ -9,6 +9,9 @@
 typedef enum {
 	PROG = 0,
 	GLVARDEF,
+	GETARRVAL,
+	GETARR,
+	SETARR,
 	MOD,
 	WHILE,
 	SCANF,
@@ -19,6 +22,12 @@ typedef enum {
 	SLOCAL2,
 	LVARDEF,
 	BLOCK,
+	ARRDEF,
+	ARRASS,
+	ARRAY,
+	LENGTH,
+	ELEMENTS,
+	ELEMENT,
 	FOR,
 	STARTFOR,
 	INC,
@@ -66,7 +75,6 @@ typedef struct astnode {
 		char *str;
 		type_t type;
 		stackval_t svar;
-		//func_t func;
 	} val; 
 	struct astnode *child[MAXCHILDREN];
 } astnode_t;
@@ -88,7 +96,12 @@ stackval_t increment(type_t type, char* id, char op, stackval_t base, stackval_t
 
 astnode_t* find_func(char* id);
 
+type_t set_type_arr(stackval_t arr);
 
-stackval_t my_scanf(stackval_t data);
+stackval_t my_scanf(stackval_t data, int index);
+
+void initArray(stackval_t sarr);
+
+void* createArray(type_t type, int size);
 
 #endif

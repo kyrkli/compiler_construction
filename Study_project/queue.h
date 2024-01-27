@@ -21,5 +21,6 @@ stackval_t dequeue(Queue* queue);
 int isEmpty(Queue* queue);
 void clearQueue(Queue* queue);
 void printQueue(Queue* queue);
+stackval_t peek(Queue *queue);
 #endif // QUEUE_H
 

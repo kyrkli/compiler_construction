@@ -7,7 +7,10 @@ typedef enum {
 	_int,
 	_double,
 	_bool,
-	_charptr
+	_charptr,
+	_intptr,
+	_doubleptr,
+	_boolptr
 } type_t;  
 
 typedef union {
@@ -27,6 +30,7 @@ typedef struct {
 typedef struct {
 	type_t type;
 	char *id;
+	int size;
 	value_t gval;
 	int flags;
 } stackval_t;
@@ -52,5 +56,7 @@ void show_stack(stack_t *s);
 stackval_t* s_peek(stack_t *s);
 stackval_t* s_lookup(stack_t *s, char *id);
 void runtime_error(int cond, char* msg);
+
+void printArray(stackval_t sarr);
 
 #endif

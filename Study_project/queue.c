@@ -64,14 +64,19 @@ void printQueue(Queue* queue) {
 	QueueNode* current = queue->front;
 	printf("Queue: ");
 	while (current != NULL) {
-		printf("I AM HERE \n");
 		print_gdata(current->data);
 
-		printf("current curr = %p\n", (void*) current);
 		current = current->next;
-		printf("current new = %p\n", (void*) current);
 	}
-	printf("good end print queue\n");
+}
+
+// Function to peek at the front element of the queue
+stackval_t peek(Queue *queue) {
+	if (isEmpty(queue)) {
+		printf("Queue is empty.\n");
+		exit(1);
+	}
+	return queue->front->data;
 }
 
 // Function to clear the queue
