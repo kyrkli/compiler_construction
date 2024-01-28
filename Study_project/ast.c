@@ -29,7 +29,7 @@ stackval_t execute_ast (astnode_t *root) {
 	if(root == NULL)
 		return (stackval_t) {};
 
-	printf("\nstart of execute ast, node = %s,\t\tast_id = %d\n", node2str(root), root->id);
+	//printf("\nstart of execute ast, node = %s,\t\tast_id = %d\n", node2str(root), root->id);
 	//print_gdata(root->val.svar);
 	switch (root->type) { 
 		case PROG:
@@ -73,7 +73,7 @@ stackval_t execute_ast (astnode_t *root) {
 		case BLOCK:
 			var_enter_block();
 			root->val.svar = execute_ast(root->child[0]);
-			//var_leave_block();
+			var_leave_block();
 			return root->val.svar;
 		case SLOCAL:	
 			root->val.svar = execute_ast(root->child[0]);
@@ -120,6 +120,7 @@ stackval_t execute_ast (astnode_t *root) {
 						  "The used type of parameter for call function isn't matched to the declared parameter\n");
 			
 			//assign the value from passed argument in the queue to the declared argument
+			arg.size = passed_arg.size;
 			arg.gval = passed_arg.gval;
 			
 			//declare new local variable
@@ -163,10 +164,15 @@ stackval_t execute_ast (astnode_t *root) {
 			return root->val.svar;
 		case GETARR:
 			//arr pointer
+			
+			printf("IN GETARR\n");
+			printf("IN GETARR left id = %s\n", root->val.svar.id);
 			root->val.svar = var_get(root->val.svar.id);
 			
+			printf("IN GETARR\n");
 			stackval_t index = execute_ast(root->child[0]);
-
+			printf("IN GETARR\n");
+			print_gdata(root->val.svar);
 			runtime_error(index.type == _int,
 						  "Index of array must be an integer\n");
 			runtime_error(index.gval.int_val >= 0 && index.gval.int_val < root->val.svar.size,
@@ -361,11 +367,15 @@ stackval_t execute_ast (astnode_t *root) {
 				case _charptr:
 					printf("%s\n", root->val.svar.gval.charptr_val);
 					break;
+				case _intptr:
+					printArray(root->val.svar);
+					break;
+				default :
+					assert(0);
 			}
 			return root->val.svar;
 		case ARRDEF:
 			root->val.svar = execute_ast(root->child[0]); //get type id and size
-			root->val.svar.type = set_type_arr(root->val.svar); //from int to int* for example
 			return root->val.svar;
 		case ARRASS:
 			stackval_t type_id_len = execute_ast(root->child[0]);	
@@ -373,15 +383,19 @@ stackval_t execute_ast (astnode_t *root) {
 			//creating queue for assigned elements
 			execute_ast(root->child[1]);
 		
-			runtime_error(type_id_len.type == peek(&arr_el).type,
+			runtime_error(type_id_len.type == set_type_arr(peek(&arr_el).type),
 						  "The type of the array must be matched to the assigned elements\n");
 			
 			root->val.svar = type_id_len;
-			root->val.svar.type = set_type_arr(root->val.svar); //from int to int* for example
 			return root->val.svar;
 		case ARRAY:
 			stackval_t type_id = execute_ast(root->child[0]);
+			
+			runtime_error(type_id.type == _intptr || type_id.type == _doubleptr || type_id.type == _boolptr,
+						  "Declared array hasn't the array type like intp, realp or boolp\n");
+			
 			stackval_t size = execute_ast(root->child[1]);
+
 			root->val.svar = type_id;
 			root->val.svar.size = size.size;
 			return root->val.svar;
@@ -411,7 +425,6 @@ stackval_t execute_ast (astnode_t *root) {
 			return root->val.svar;
 		case STERM: 
 			stackval_t saved = execute_ast(root->child[0]);
-			
 			runtime_error(root->val.type == saved.type,
 						 "The type of a term at the moment of declaration or using need to match the calculated type of the term\n");
 			root->val.svar = saved;
@@ -456,6 +469,12 @@ stackval_t execute_ast (astnode_t *root) {
 			return root->val.svar;
 		case GREATER:
 			root->val.svar = compare(execute_ast(root->child[0]), '>', execute_ast(root->child[1]));
+			return root->val.svar;
+		case GREATEREQ:
+			root->val.svar = compare(execute_ast(root->child[0]), 'g', execute_ast(root->child[1]));
+			return root->val.svar;
+		case LESSEQ:
+			root->val.svar = compare(execute_ast(root->child[0]), 'l', execute_ast(root->child[1]));
 			return root->val.svar;
 		case LESS:
 			root->val.svar = compare(execute_ast(root->child[0]), '<', execute_ast(root->child[1]));
@@ -519,8 +538,8 @@ void initArray(stackval_t sarr){
 				  "Too many elements for definition of array\n");
 }
 
-type_t set_type_arr(stackval_t arr){
-	switch(arr.type){
+type_t set_type_arr(type_t type){
+	switch(type){
 		case _char:
 			return _charptr;
 		case _int:
@@ -530,7 +549,7 @@ type_t set_type_arr(stackval_t arr){
 		case _bool:
 			return _boolptr;
 		default:
-			assert(0);
+			runtime_error(0, "Type of the element of the array cann't be an array");
 			return _error;
 	}
 }
@@ -539,6 +558,10 @@ char* node2str(astnode_t* node){
 	switch(node->type){
 		case PROG:
 			return "PROG";
+		case LESSEQ:
+			return "LESSEQ";
+		case GREATEREQ:
+			return "GREATEREQ";
 		case GETARRVAL:
 			return "GETARRVAL";
 		case GETARR:
@@ -695,6 +718,12 @@ stackval_t compare(stackval_t num1, char op, stackval_t num2){
 				case '!':
 					result.gval.int_val = (num1.gval.char_val != num2.gval.char_val) ? 1 : 0;
 					return result;
+				case 'g':
+					result.gval.int_val = (num1.gval.char_val >= num2.gval.char_val) ? 1 : 0;
+					return result;
+				case 'l':
+					result.gval.int_val = (num1.gval.char_val <= num2.gval.char_val) ? 1 : 0;
+					return result;
 			}
 			break;
 		case _int:
@@ -712,6 +741,12 @@ stackval_t compare(stackval_t num1, char op, stackval_t num2){
 				case '!':
 					result.gval.int_val = (num1.gval.int_val != num2.gval.int_val) ? 1 : 0;
 					return result;
+				case 'g':
+					result.gval.int_val = (num1.gval.int_val >= num2.gval.int_val) ? 1 : 0;
+					return result;
+				case 'l':
+					result.gval.int_val = (num1.gval.int_val <= num2.gval.int_val) ? 1 : 0;
+					return result;
 			}
 			break;
 		case _double:
@@ -728,6 +763,13 @@ stackval_t compare(stackval_t num1, char op, stackval_t num2){
 				case '!':
 					result.gval.int_val = (num1.gval.double_val != num2.gval.double_val) ? 1 : 0;
 					return result;
+				case 'g':
+					result.gval.int_val = (num1.gval.double_val >= num2.gval.double_val) ? 1 : 0;
+					return result;
+				case 'l':
+					result.gval.int_val = (num1.gval.double_val <= num2.gval.double_val) ? 1 : 0;
+					return result;
+
 			}
 			break;
 		case _charptr:
@@ -744,6 +786,8 @@ stackval_t compare(stackval_t num1, char op, stackval_t num2){
 				case '!':
 					result.gval.int_val = (strcmp(num1.gval.charptr_val, num2.gval.charptr_val) != 0) ? 1 : 0;
 					return result;
+				default:
+					runtime_error(0, "Not defined operation greater equal or less equal to strings\n");
 			}
 			break;
 	}

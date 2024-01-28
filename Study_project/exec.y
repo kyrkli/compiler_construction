@@ -107,7 +107,7 @@ VARDEF 	: VARIABLE newline { $$ = astnode_new(VARDEF);
 							 			$$->child[0] = $1; $$->child[1] = $4; }
 
 VARIABLE: type arrow id { $$ = astnode_new(VARIABLE);
-									$$->val.svar = $3; $$->val.svar.type = $1;}
+						  $$->val.svar = $3; $$->val.svar.type = $1;}
 
 STERM: type arrow TERM {	$$ = astnode_new(STERM);
 	 						$$->val.type = $1; $$->child[0] = $3; }
@@ -159,13 +159,16 @@ COMPARE : STERM '>' STERM { $$ = astnode_new(GREATER);
 		 					$$->child[0] = $1; $$->child[1] = $3;}
 		| STERM '<' STERM { $$ = astnode_new(LESS); 
 		 					$$->child[0] = $1; $$->child[1] = $3;}
+		| STERM '>' '=' STERM { $$ = astnode_new(GREATEREQ); 
+		 						$$->child[0] = $1; $$->child[1] = $4;}
+		| STERM '<' '=' STERM { $$ = astnode_new(LESSEQ); 
+		 						$$->child[0] = $1; $$->child[1] = $4;}
 		| STERM '=' STERM { $$ = astnode_new(EQUAL);
 		 					$$->child[0] = $1; $$->child[1] = $3;}
 		| STERM '!' STERM { $$ = astnode_new(NOTEQ);
 		 					$$->child[0] = $1; $$->child[1] = $3;}
 
-PRINT : print '[' STERM ']' newline { $$ = astnode_new(PRINT);
-	  								  $$->child[0] = $3; }
+PRINT : print '[' STERM ']' newline { $$ = astnode_new(PRINT); $$->child[0] = $3; }
 
 WHILE: _while SCOMPARE newline BLOCK { $$ = astnode_new(WHILE);
 	 								   $$->child[0] = $2; $$->child[1] = $4; }
@@ -176,14 +179,14 @@ FOR: _for '[' STARTFOR SCOMPARE newline INC ']' newline BLOCK { $$ = astnode_new
 STARTFOR: LVARDEF { $$ = astnode_new(STARTFOR); 
 				  $$->child[0] = $1; }
 
-INC : '+' num { $$ = astnode_new(INC); 
-			  	$$->val.svar = $2; $$->val.svar.id = "+"; }
-	| '-' num { $$ = astnode_new(INC); 
-			  	$$->val.svar = $2; $$->val.svar.id = "-"; }
-	| '*' num { $$ = astnode_new(INC); 
-			  	$$->val.svar = $2; $$->val.svar.id = "*"; }
-	| '/' num { $$ = astnode_new(INC); 
-			  	$$->val.svar = $2; $$->val.svar.id = "/"; }
+INC : '+' arrow num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $3; $$->val.svar.id = "+"; }
+	| '-' arrow num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $3; $$->val.svar.id = "-"; }
+	| '*' arrow num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $3; $$->val.svar.id = "*"; }
+	| '/' arrow num { $$ = astnode_new(INC); 
+			  	$$->val.svar = $3; $$->val.svar.id = "/"; }
 	| %empty { $$ = NULL;}
 
 SETVAR : id '=' STERM newline { $$ = astnode_new(SETVAR); 

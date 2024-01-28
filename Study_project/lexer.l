@@ -20,9 +20,9 @@ DIGIT17 [1-7]
 DIGIT0F [0-9a-fA-F]
 DIGIT1F [1-9a-fA-F]
 
-OCTAL {DIGIT17}{DIGIT07}*|0
-HEX {DIGIT1F}{DIGIT0F}*|0
-DEC {DIGIT19}{DIGIT09}*|0
+OCTAL [+-]?{DIGIT17}{DIGIT07}*|0
+HEX [+-]?{DIGIT1F}{DIGIT0F}*|0
+DEC [+-]?{DIGIT19}{DIGIT09}*|0
 ID [a-zA-Z_]+{DIGIT09}*
 CH '.' 
 
@@ -42,6 +42,7 @@ DECREAL {DEC}.(0)*{DEC}
 			return num;}
 {DECDEF} { 	yylval.svar.gval.int_val = strtoul(yytext, NULL, 10); 
 			yylval.svar.type = _int;
+			printf("int = %d\n", yylval.svar.gval.int_val);
 			return num; }
 {HEXDEF} { 	yylval.svar.gval.int_val = strtoul(yytext+5, NULL, 16);
 			yylval.svar.type = _int; 
@@ -51,8 +52,10 @@ DECREAL {DEC}.(0)*{DEC}
 			yylval.svar.gval.double_val = strtod(yytext+3, NULL); 
 			yylval.svar.type = _double; 
 			return num;}
-{DECREAL} { yylval.svar.gval.double_val = strtod(yytext, NULL); 
-			yylval.svar.type = _double; 
+{DECREAL} { printf("yytext = %s", yytext);
+			yylval.svar.gval.double_val = strtod(yytext, NULL); 
+			yylval.svar.type = _double;
+			printf("double = %f\n", yylval.svar.gval.double_val);
 			return num;}
 {STRING} {	char new_string[100];
 			//cut str( and )end
@@ -62,6 +65,10 @@ DECREAL {DEC}.(0)*{DEC}
 			yylval.svar.type = _charptr;
 			return str;}	
 
+
+intp { yylval.type = _intptr; return type; }
+realp { yylval.type = _doubleptr; return type; }
+boolp { yylval.type = _boolptr; return type; }
 
 char { yylval.type = _char; return type; }
 int { yylval.type = _int; return type; }

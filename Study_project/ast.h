@@ -10,6 +10,8 @@ typedef enum {
 	PROG = 0,
 	GLVARDEF,
 	GETARRVAL,
+	LESSEQ,
+	GREATEREQ,
 	GETARR,
 	SETARR,
 	MOD,
@@ -96,7 +98,7 @@ stackval_t increment(type_t type, char* id, char op, stackval_t base, stackval_t
 
 astnode_t* find_func(char* id);
 
-type_t set_type_arr(stackval_t arr);
+type_t set_type_arr(type_t arr);
 
 stackval_t my_scanf(stackval_t data, int index);
 

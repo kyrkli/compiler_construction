@@ -7,14 +7,19 @@ stack_t vars, globals;
 
 static stackval_t *var_lookup (char *id, int border) {
 	node_t *run = vars.head;
+	
+	printf("var lookup before locals\n");	
 	while(run){
 		if(run->data.flags >= border)
 			break;
-		if(!strcmp(run->data.id, id))
+		printf("id of run = %s searched id = %s\n", run->data.id, id);
+		if(!strcmp(run->data.id, id)){
+			printf("inside strcmp\n");
 			return &run->data;
+		}
 		run = run->next;
 	}
-	
+	printf("var lookup before globals\n");	
 	if(border == VAR_BORDER_BLOCK)
 		return NULL;
 
@@ -172,7 +177,6 @@ void* var_set (char *id, void* gval, type_t expected_type, int index) {
 			s->gval.int_val = *(int *) gval;
 			break;
 		case _charptr:
-			printf("Hello charptr gval = %s\n", (char *) gval);
 			s->gval.charptr_val = strdup((char *) gval);
 			break;
 		case _intptr:
@@ -207,9 +211,14 @@ void* var_set (char *id, void* gval, type_t expected_type, int index) {
 }
 
 stackval_t var_get (char *id) {
+	printf("in var get\n");
+	printf("searched id = %s\n", id);
 	stackval_t *s = var_lookup(id, VAR_BORDER_FUNC);
-	if (s)
+	printf("in var get2\n");
+	if (s){
+		printf("type in varget = %d\n", s->type);
 		return *s;
+	}
 	else {
     	// Handle usage of undeclared variable
 		runtime_error(0, "Detected usage of undeclared variable\n");
