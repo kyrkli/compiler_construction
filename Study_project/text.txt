@@ -39,7 +39,9 @@ int->end
 %
 	IF [int->start = int->end]
 	%
+		PRINT[string->str(result:------------------------------------------------)end]
 		PRINT[intp->arr]
+		PRINT[string->str()end]
 	$
 	ELSE
 	%
@@ -48,14 +50,11 @@ int->end
 			  [int->i <= int->end]
 			  + -> 1 ]
 			  %
-			  PRINT[string->str(START OF BLOCK-------------------------------------------------)end]
-			  PRINT[int->start]
 			  		@@ swap
 			  int->temp
 			  =int->arr[int->start]
 			  arr[int->start] = int->arr[int->i]
 			  arr[int->i] = int->temp
-			  PRINT[string->str(BEFORE RECURSIV CALL -----------------------------------------)end]
 			  CALL permutations [p:intp->arr p:int->start + 1 p:int->end]
 			  		@@ backtrack
 			  int->temp1
@@ -66,7 +65,10 @@ int->end
 	$
 $
 %
-	intp->nums->int->6
-	=[el:int->1 el:int->2 el:int->3 el:int->4 el:int->5 el:int->6]
-	CALL permutations [p:intp->nums p:int->0 p:int->6 - 1]
+	PRINT[string->str(START OF MAIN)end]
+	intp->nums->int->3
+	=[el:int->1 el:int->2 el:int->3]
+	PRINT[string->str(AFTER ARR DECL AND BEFORE CALL)end]
+	CALL permutations [p:intp->nums p:int->0 p:int->2]
+	PRINT[string->str(END OF THE PROGRAMM)end]
 $

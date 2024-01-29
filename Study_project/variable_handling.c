@@ -8,18 +8,14 @@ stack_t vars, globals;
 static stackval_t *var_lookup (char *id, int border) {
 	node_t *run = vars.head;
 	
-	printf("var lookup before locals\n");	
 	while(run){
 		if(run->data.flags >= border)
 			break;
-		printf("id of run = %s searched id = %s\n", run->data.id, id);
 		if(!strcmp(run->data.id, id)){
-			printf("inside strcmp\n");
 			return &run->data;
 		}
 		run = run->next;
 	}
-	printf("var lookup before globals\n");	
 	if(border == VAR_BORDER_BLOCK)
 		return NULL;
 
@@ -121,7 +117,6 @@ void* var_declare (type_t type, char *id, void* gval, int size) {
 void* var_set (char *id, void* gval, type_t expected_type, int index) {
   stackval_t *s = var_lookup (id, VAR_BORDER_FUNC);
   if (s){
-	  printf("s->type = %d; expected type = %d\n", s->type, expected_type);
 	 
 	  switch(s->type){
 		case _char:
@@ -211,12 +206,8 @@ void* var_set (char *id, void* gval, type_t expected_type, int index) {
 }
 
 stackval_t var_get (char *id) {
-	printf("in var get\n");
-	printf("searched id = %s\n", id);
 	stackval_t *s = var_lookup(id, VAR_BORDER_FUNC);
-	printf("in var get2\n");
 	if (s){
-		printf("type in varget = %d\n", s->type);
 		return *s;
 	}
 	else {
