@@ -4,6 +4,8 @@
 #include "variable_handling.h"
 #include "ast.h"
 #include <assert.h>
+#include <time.h>
+#include <stdlib.h>
 //static vars and globals
 //syntax errors via assert
 //
@@ -40,8 +42,8 @@ int yydebug = 0;
 		<svar> ch
 		<svar> str
 		<str> newline
-
-%token and or xor not _if _else print _for func call pp _scanf mod _while arrow el
+		<svar> nl
+%token and _random or xor not _if _else print _for size func call pp _scanf mod _while arrow el
 
 %left or
 %left and
@@ -49,13 +51,13 @@ int yydebug = 0;
 %right not
 
 %right '='
-%left '-' '+'  
+%left '-' '+'
 %left '*' '/'
 %left mod
 %right '^'
 
 //non-terminals
-%type <ast> S PROG BLOCK ARRDEF GETARR ARRAY LENGTH ELEMENTS GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
+%type <ast> S PROG GETRANDOM PRINTVALS BLOCK ARRDEF GETARR ARRAY LENGTH ELEMENTS GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
 %%
 S : PROG { execute_ast($1); var_dump(); printf("MAX AST ID = %d\n", ast_id); print_ast($1, 0); }
 
@@ -131,8 +133,11 @@ TERM: TERM '-' TERM   { $$ = astnode_new(MINUS);
 	| boolean { $$ = astnode_new(BOOLEAN); $$->val.svar = $1; }
 	| FUNCCALL { $$ = astnode_new(RETURNCALL); $$->child[0] = $1; }
 	| GETARR { $$ = astnode_new(GETARRVAL); $$->child[0] = $1;}
+	| GETRANDOM { $$ = astnode_new(RANDOM); $$->child[0] = $1; }
+	| nl { $$ = astnode_new(NL); $$->val.svar = $1;}
 
 GETARR: id '[' STERM ']' { $$ = astnode_new(GETARR); $$->val.svar = $1; $$->child[0] = $3;}
+	  | id arrow size { $$ = astnode_new(GETARRSIZE); $$->val.svar = $1; }
 
 IF: _if COND newline BLOCK { $$ = astnode_new(IF);
   					 $$->child[0] = $2; $$->child[1] = $4; }
@@ -168,7 +173,11 @@ COMPARE : STERM '>' STERM { $$ = astnode_new(GREATER);
 		| STERM '!' STERM { $$ = astnode_new(NOTEQ);
 		 					$$->child[0] = $1; $$->child[1] = $3;}
 
-PRINT : print '[' STERM ']' newline { $$ = astnode_new(PRINT); $$->child[0] = $3; }
+PRINT : print '[' PRINTVALS ']' newline { $$ = astnode_new(PRINT); $$->child[0] = $3; }
+
+PRINTVALS : PRINTVALS ',' STERM { $$ = astnode_new(PRINTVALS); 
+		 						 $$->child[0] = $1; $$->child[1] = $3;}
+		  | STERM { $$ = astnode_new(PRINTVAL); $$->child[0] = $1; }
 
 WHILE: _while SCOMPARE newline BLOCK { $$ = astnode_new(WHILE);
 	 								   $$->child[0] = $2; $$->child[1] = $4; }
@@ -208,9 +217,9 @@ APARAM 	: APARAM pp STERM    { $$ = astnode_new(APARAM);
 									$$->child[0] = $1; $$->child[1] = $3; }
 	 	| %empty { $$ = NULL; }
 
-SCANF : _scanf '[' VARIABLE ']' newline { $$ = astnode_new(SCANF);
-	  									 $$->child[0] = $3; }
-
+SCANF : _scanf '[' VARIABLE ']' newline { $$ = astnode_new(SCANF); $$->child[0] = $3; }
+	  | _scanf '[' type arrow id '[' STERM ']' ']' newline { $$ = astnode_new(SCANFARR);
+	  							$$->val.svar = $5; $$->val.svar.type = $3; $$->child[0] = $7;}
 ARRDEF  : ARRAY newline { $$ = astnode_new(ARRDEF); $$->child[0] = $1; }
 
 		| ARRAY newline '=' '[' ELEMENTS ']' newline { $$ = astnode_new(ARRASS);
@@ -224,9 +233,13 @@ LENGTH : STERM { $$ = astnode_new(LENGTH); $$->child[0] = $1; }
 ELEMENTS : ELEMENTS el STERM  { $$ = astnode_new(ELEMENTS);
 		 						$$->child[0] = $1;  $$->child[1] = $3; }
 		 | el STERM { $$ = astnode_new(ELEMENT); $$->child[0] = $2; }
+
+GETRANDOM : _random '[' STERM STERM ']' { $$ = astnode_new(GETRANDOM);
+										  $$->child[0] = $3; $$->child[1] = $4; }
 %%
 
 int main(){
+	srand(time(NULL));
 	int st = yyparse();
 	printf("Word is %i\n", st);
 	return st;

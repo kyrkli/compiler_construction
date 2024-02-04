@@ -83,10 +83,16 @@ not { printf("not\n"); return not; }
 
 mod { printf("mod\n"); return mod; }
 
+nl { printf("nl\n");
+	yylval.svar.type = _char; 
+	yylval.svar.gval.char_val = '\n';	
+	return nl; }
 -> { printf("arrow\n"); return arrow; }
 p: { printf("p:\n"); return pp;}
 el: { printf("el:\n"); return el;}
 
+SIZE { printf("SIZE\n"); return size;}
+RANDOM { printf("RANDOM\n"); return _random;}
 SCANF { printf("SCANF\n"); return _scanf; }
 CALL { printf("CALL\n"); return call;}
 FUNC { printf("FUNC\n"); return func;}
@@ -107,6 +113,7 @@ FALSE { printf("FALSE\n");
 		return boolean;}
 
 {CH}  { yylval.svar.type = _char;
+		printf("Hello its char\n");
 		yylval.svar.gval.char_val = yytext[1]; 
 		return ch;}
 

@@ -11,6 +11,7 @@
 
 Queue qparam;
 Queue arr_el;
+Queue qprint;
 
 astnode_t* declared_functions[MAX_DECLARED_FUNC];
 
@@ -65,14 +66,30 @@ stackval_t execute_ast (astnode_t *root) {
 					
 					break;
 			}
-
 			var_declare_general_val(res, 'g');
 			return res;
 		case BLOCK:
 			var_enter_block();
 			res = execute_ast(root->child[0]);
+			//var_dump();
 			var_leave_block();
 			return res;
+		case RANDOM:
+			return execute_ast(root->child[0]);
+		case GETRANDOM:
+			stackval_t min = execute_ast(root->child[0]);
+			stackval_t max = execute_ast(root->child[1]);
+
+			runtime_error(min.type == _int && max.type == _int,
+						  "Random boundaries must be an integer\n");
+			
+			runtime_error(min.gval.int_val < max.gval.int_val,
+						  "At the left side must be the min boundary, at the right side - max boundary\n");
+			/*
+			runtime_error(num1.gval.int_val >= 0 && num2.gval.int_val >= 0,
+						  "Random boundaries must be greater than 0\n");
+			*/
+			return (stackval_t) {.type = _int, .gval.int_val = rand() % (max.gval.int_val - min.gval.int_val + 1) + min.gval.int_val };
 		case SLOCAL:	
 			res = execute_ast(root->child[0]);
 			execute_ast(root->child[1]);
@@ -158,6 +175,9 @@ stackval_t execute_ast (astnode_t *root) {
 		case GETARRVAL:
 			res = execute_ast(root->child[0]);
 			return res;
+		case GETARRSIZE:
+			res = var_get(root->val.svar.id);
+			return (stackval_t) {.type = _int, .gval.int_val = res.size};
 		case GETARR:
 			//arr pointer
 			stackval_t arr = var_get(root->val.svar.id);
@@ -175,6 +195,9 @@ stackval_t execute_ast (astnode_t *root) {
 				case _doubleptr:
 					double* darr = arr.gval.doubleptr_val;
 					return (stackval_t) { .type = _double, .gval.double_val = darr[index.gval.int_val]};
+				case _charptr:
+					char* carr = arr.gval.charptr_val;
+					return (stackval_t) { .type = _char, .gval.char_val = carr[index.gval.int_val]};
 				default:
 					assert(0);
 			}
@@ -221,7 +244,6 @@ stackval_t execute_ast (astnode_t *root) {
 		case ASSVARDEF:
 			stackval_t var = execute_ast(root->child[0]);
 			stackval_t sterm = execute_ast(root->child[1]);
-			
 			if(var.type == _bool && sterm.type == _int){
 				sterm.type = _bool;
 				if(sterm.gval.int_val > 0)
@@ -235,12 +257,19 @@ stackval_t execute_ast (astnode_t *root) {
 			res = var;
 			//assigning value
 			if(res.type == _charptr)
-				res.gval.charptr_val = strdup(root->child[1]->val.svar.gval.charptr_val);
+				res.gval.charptr_val = strdup(sterm.gval.charptr_val);
 			else
 				res.gval = sterm.gval;
 			return res;
 		case SCANF:
 			return my_scanf(execute_ast(root->child[0]), 0);
+		case SCANFARR:
+			stackval_t indexarr = execute_ast(root->child[0]);
+			
+			runtime_error(indexarr.type == _int,
+						  "Index of array must be an integer\n");
+			
+			return my_scanf(root->val.svar, indexarr.gval.int_val);
 		case VARIABLE:
 			return root->val.svar; 
 		case GETIDVAL:
@@ -294,6 +323,7 @@ stackval_t execute_ast (astnode_t *root) {
 			return boolterm;
 		case FOR:
 			//start
+			var_enter_block();
 			stackval_t saved_start = execute_ast(root->child[0]); 
 			
 			stackval_t inc = execute_ast(root->child[2]);
@@ -305,7 +335,7 @@ stackval_t execute_ast (astnode_t *root) {
 				//increment	
 				run = increment(saved_start.type, saved_start.id, inc.id[0], run, inc);	
 			}
-
+			var_leave_block();
 			return saved_start;
 //TODO at the definition of new variables to check if the id is a keyword like PRINT or or smth else
 //TODO void type for function return
@@ -325,31 +355,52 @@ stackval_t execute_ast (astnode_t *root) {
 			//get type and value for variable
 			stackval_t newval = execute_ast(root->child[0]);
 			newval.id = root->val.svar.id;
-			set_general_svar(newval, 0);
+			set_general_svar(newval, -1);
 			return newval;
 		case PRINT:
-			stackval_t val = execute_ast(root->child[0]);
-			switch(val.type){
-				case _char:
-					printf("%c\n", val.gval.char_val);
-					break;
-				case _int:
-				case _bool:
-					printf("%d\n", val.gval.int_val);
-					break;
-				case _double:
-					printf("%f\n", val.gval.double_val);
-					break;
-				case _charptr:
-					printf("%s\n", val.gval.charptr_val);
-					break;
-				case _intptr:
-					printArray(val);
-					break;
-				default :
-					assert(0);
-			}
-			return val;
+			//var_dump();
+			//create queue for values
+			execute_ast(root->child[0]);
+			stackval_t print_val;
+			do {
+				print_val = dequeue(&qprint);
+				switch(print_val.type){
+					case _char:
+						printf("%c ", print_val.gval.char_val);
+						break;
+					case _int:
+					case _bool:
+						printf("%d ", print_val.gval.int_val);
+						break;
+					case _double:
+						printf("%f ", print_val.gval.double_val);
+						break;
+					case _charptr:
+						if(print_val.gval.charptr_val == NULL)
+							printf("NULL\n");
+						else
+							printf("%s ", print_val.gval.charptr_val);
+						break;
+					case _intptr:
+						printArray(print_val);
+						break;
+					default :
+						assert(0);
+				} 	
+			} while (!isEmpty(&qprint));
+			return print_val;
+		case NL:
+			return root->val.svar;
+		case PRINTVALS:
+			execute_ast(root->child[0]);
+			stackval_t right_val = execute_ast(root->child[1]);
+			
+			enqueue(&qprint, right_val);
+			return right_val;
+		case PRINTVAL:
+			res = execute_ast(root->child[0]);
+			enqueue(&qprint, res);
+			return res;
 		case ARRDEF:
 			return execute_ast(root->child[0]); //get type id and size
 		case ARRASS:
@@ -511,6 +562,12 @@ char* node2str(astnode_t* node){
 	switch(node->type){
 		case PROG:
 			return "PROG";
+		case RANDOM:
+			return "RANDOM";
+		case GETRANDOM:
+			return "GETRANDOM";
+		case SCANFARR:
+			return "SVANFARR";
 		case LESSEQ:
 			return "LESSEQ";
 		case GREATEREQ:
@@ -545,8 +602,16 @@ char* node2str(astnode_t* node){
 			return "RETURNCALL";
 		case ASSVARDEF:
 			return "ASSVARDEF";
+		case NL:
+			return "NL";
+		case GETARRSIZE:
+			return "GETARRSIZE";
 		case VARIABLE:
 			return "VARIABLE";
+		case PRINTVAL:
+			return "PRINTVAL";
+		case PRINTVALS:
+			return "PRINTVALS";
 		case FOR:
 			return "FOR";
 		case INC:
@@ -908,6 +973,17 @@ stackval_t my_scanf(stackval_t data, int index){
 			printf("You entered: %s\n", data.gval.charptr_val);
 			set_general_svar(data, index);
 			break;
+		case _intptr:
+			printf("Enter an int in the array: ");
+			isSuccess = scanf("%d", &data.gval.int_val);
+			
+			runtime_error(isSuccess == 1,
+						  "Invalid input\n");
+			
+			printf("You entered: %d\n", data.gval.int_val);
+			set_general_svar(data, index);
+			break;
+
 	}
 	return data;
 }
