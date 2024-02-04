@@ -324,8 +324,9 @@ stackval_t execute_ast (astnode_t *root) {
 		case FOR:
 			//start
 			var_enter_block();
+		//	var_dump();
 			stackval_t saved_start = execute_ast(root->child[0]); 
-			
+		//	var_dump();
 			stackval_t inc = execute_ast(root->child[2]);
 			
 			for(stackval_t run = saved_start; execute_ast(root->child[1]).gval.int_val > 0; ){
@@ -366,20 +367,20 @@ stackval_t execute_ast (astnode_t *root) {
 				print_val = dequeue(&qprint);
 				switch(print_val.type){
 					case _char:
-						printf("%c ", print_val.gval.char_val);
+						printf("%c", print_val.gval.char_val);
 						break;
 					case _int:
 					case _bool:
-						printf("%d ", print_val.gval.int_val);
+						printf("%d", print_val.gval.int_val);
 						break;
 					case _double:
-						printf("%f ", print_val.gval.double_val);
+						printf("%f", print_val.gval.double_val);
 						break;
 					case _charptr:
 						if(print_val.gval.charptr_val == NULL)
-							printf("NULL\n");
+							printf("NULL");
 						else
-							printf("%s ", print_val.gval.charptr_val);
+							printf("%s", print_val.gval.charptr_val);
 						break;
 					case _intptr:
 						printArray(print_val);
@@ -877,40 +878,48 @@ stackval_t increment(type_t type, char* id, char op, stackval_t base, stackval_t
 	switch(op){
 		case '+':
 			if(type == _int){
+				base = var_get(id);
 				var_set(id, & (int) {base.gval.int_val + inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val + inc.gval.int_val;
 				return base;
 			} else {
+				base = var_get(id);
 				var_set(id, & (double) {base.gval.double_val + inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val + inc.gval.double_val;
 				return base;
 			}
 		case '-':
 			if(type == _int){
+				base = var_get(id);
 				var_set(id, & (int) {base.gval.int_val - inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val - inc.gval.int_val;
 				return base;
 			} else {
+				base = var_get(id);
 				var_set(id, & (double) {base.gval.double_val - inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val - inc.gval.double_val;
 				return base;
 			}
 		case '*':
 			if(type == _int){
+				base = var_get(id);
 				var_set(id, & (int) {base.gval.int_val * inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val * inc.gval.int_val;
 				return base;
 			} else {
+				base = var_get(id);
 				var_set(id, & (double) {base.gval.double_val * inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val * inc.gval.double_val;
 				return base;
 			}
 		case '/':
 			if(type == _int){
+				base = var_get(id);
 				var_set(id, & (int) {base.gval.int_val / inc.gval.int_val}, type, 0);
 				base.gval.int_val = base.gval.int_val / inc.gval.int_val;
 				return base;
 			} else {
+				base = var_get(id);
 				var_set(id, & (double) {base.gval.double_val / inc.gval.double_val}, type, 0);
 				base.gval.double_val = base.gval.double_val / inc.gval.double_val;
 				return base;

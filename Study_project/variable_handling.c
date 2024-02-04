@@ -251,6 +251,7 @@ stackval_t var_get (char *id) {
 	}
 	else {
     	// Handle usage of undeclared variable
+		printf("id = %s\n", id);
 		runtime_error(0, "Detected usage of undeclared variable\n");
 		return (stackval_t) {};
 	}

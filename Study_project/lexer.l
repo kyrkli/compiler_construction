@@ -59,6 +59,7 @@ DECREAL {DEC}.(0)*{DEC}
 			return num;}
 {STRING} {	char new_string[100];
 			//cut str( and )end
+			printf("string = %s\n", new_string);
 			strncpy(new_string, yytext + 4, strlen(yytext) - 8);
 			new_string[strlen(yytext) - 8] = '\0';  // Null-terminate the new string
 			yylval.svar.gval.charptr_val = strdup(new_string);
