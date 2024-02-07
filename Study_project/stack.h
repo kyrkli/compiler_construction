@@ -3,6 +3,7 @@
 
 typedef enum {
 	_error = -1,
+	_void,
 	_char,
 	_int,
 	_double,

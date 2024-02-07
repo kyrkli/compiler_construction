@@ -1,17 +1,85 @@
 @@ dot ast.gv -Tpng -o ast.png
-@ Das sind meine Kommentare
-lala
-Obana + 123 +++ 12
-#
+@@ ggVG "+y
+FUNC pascal_triangle void [
+]
+%
+	int->max_rows
+	PRINT[string->str(Enter the maximum number of rows)end, char->nl]
+	SCANF[int->max_rows]
+	intp->triangle->int->max_rows * (max_rows + 1) / 2
+	PRINT[int->triangle->SIZE, char->nl]
+	int->idx
+	=int->0
+	@@set numbers
+	FOR[int->row
+		=int->0
+		[int->row < int->max_rows]
+		]
+	%
+		FOR[int->col
+			=int->0
+			[int->col <= int->row]
+			]
+		%
+			IF [int->col = int->0] or [int->col = int->row]
+			%
+				triangle[int->idx] = int->1
+				idx = int->idx + 1
+			$
+			ELSE
+			%
+				int->prevRowStartIdx 
+				=int->(row - 1) * row / 2
+				int->leftVal 
+				=int->triangle[int->prevRowStartIdx + col - 1]
+				int->rightVal
+				=int->triangle[int->prevRowStartIdx + col]
+				triangle[int->idx] = int-> leftVal + rightVal
+				idx = int->idx + 1
+			$
+		$
+	$
+	idx = int->0
+	@@ print triangle
+	FOR[int->row
+		=int->0
+		[int->row < int->max_rows]
+		]
+	%
+		FOR[int->col
+			=int->0
+			[int->col < int->max_rows - row - 1]
+			]
+		%
+			PRINT[string->str(   )end]
+		$
+		FOR[int->col
+			=int->0
+			[int->col <= int->row]
+			]
+		%
+			IF[int->triangle[int->idx] < int->10]
+			%
+				PRINT[string->str(     )end]
+			$
+			ELSE
+			%
+				PRINT[string->str(    )end]
+			$
+			PRINT[int->triangle[int->idx]]
+			idx = int->idx + 1
+		$
+		PRINT[char->nl]
+	$
+$
 FUNC hailstone real [
 ]
 %
 	int->n
-	PRINT[string->str(Enter start number for hailtone sequence)end]
+	PRINT[string->str(Enter start number for hailtone sequence)end, char->nl]
 	SCANF[int->n]
 	int->counter
-	PRINT[string->str(Start number is:)end]
-	PRINT[int->n]
+	PRINT[string->str(Start number is: )end, int->n, char->nl]
 	PRINT[string->str(Numbers:)end]
 	WHILE[int->n ! int->1]
 		%
@@ -24,13 +92,10 @@ FUNC hailstone real [
 				n = int->n * 3 + 1
 			$
 			counter = int->counter + 1
-			PRINT[int->n]
+			PRINT[int->n, char->' ']
 		$
-	PRINT[string->str()end]
-	PRINT[string->str(The last number:)end]
-	PRINT[int->n]
-	PRINT[string->str(Counter of steps:)end]
-	PRINT[int->counter]
+	PRINT[char->nl]
+	PRINT[string->str(Counter of steps: )end, int->counter, char->nl]
 $
 FUNC permutations int [
 intp->arr
@@ -40,36 +105,34 @@ int->end
 %
 	IF [int->start = int->end]
 	%
-		PRINT[string->str(result:------------------------------------------------)end]
-		PRINT[intp->arr]
-		PRINT[string->str()end]
+		PRINT[string->str(Permutation: )end, intp->arr, char->nl]
 	$
 	ELSE
 	%
-		FOR [ int->i
-			  =int->start
-			  [int->i <= int->end]
-			  + -> 1 ]
-			  %
-			  		@@ swap
-			  int->temp
-			  =int->arr[int->start]
-			  arr[int->start] = int->arr[int->i]
-			  arr[int->i] = int->temp
-			  CALL permutations [p:intp->arr p:int->start + 1 p:int->end]
-			  		@@ backtrack
-			  int->temp1
-			  =int->arr[int->start]
-			  arr[int->start] = int->arr[int->i]
-			  arr[int->i] = int->temp1
-			  $
+		FOR [int->i
+			 =int->start
+			[int->i <= int->end]
+			]
+	 	%
+				@@ swap
+			int->temp
+			=int->arr[int->start]
+			arr[int->start] = int->arr[int->i]
+			arr[int->i] = int->temp
+			CALL permutations [p:intp->arr p:int->start + 1 p:int->end]
+			  	@@ backtrack
+			int->temp1
+			=int->arr[int->start]
+			arr[int->start] = int->arr[int->i]
+			arr[int->i] = int->temp1
+		$
 	$
 $
 FUNC start_permutations int [
 ]
 %
 	int->N
-	PRINT[string->str(Enter how many numbers do you want to input)end]
+	PRINT[string->str(Permutations: enter how many numbers do you want to input)end, char->nl]
 	SCANF[int->N]
 	intp->arr->int->N
 	FOR [ int->i
@@ -84,79 +147,90 @@ $
 FUNC calculation_trainer int [
 ]
 %
-	PRINT[string->str(Start calc trainer)end, char->nl]
+	PRINT[string->str(Start calculation trainer)end, char->nl]
 	int->num_of_op
 	=int->5
 	int->num_of_num
 	=int->num_of_op + 1
 	intp->nums->int->num_of_num
-	@@ set random numbers
+		@@ set random numbers
 	FOR[int->i
 		=int->0
 		[int->i < int->num_of_num]
 		+ -> 1]
-		%
-			nums[int->i] = int->RANDOM[int->1 int->10]
-		$
+	%
+		nums[int->i] = int->RANDOM[int->1 int->10]
+	$
 	string->ops
-	@@ set random ops
+		@@ set random ops
 	FOR[int->i
 		=int->0
 		[int->i < int->num_of_op]
 		+ -> 1]
+	%
+		int->num_op
+		=int->RANDOM[int->1 int->6]
+		IF [int->num_op = int-> 1]
 		%
-			int->num_op
-			=int->RANDOM[int->1 int->6]
-			IF [int->num_op = int-> 1]
+			ops[int->i] = char->'-'
+		$
+		ELSE
+		%
+			IF [int->num_op = int-> 2]
 			%
-				ops[int->i] = char->'-'
+				ops[int->i] = char->'+'
 			$
 			ELSE
 			%
-				IF [int->num_op = int-> 2]
+				IF [int->num_op = int-> 3]
 				%
-					ops[int->i] = char->'+'
+					ops[int->i] = char->'*'
 				$
 				ELSE
 				%
-					IF [int->num_op = int-> 3]
+					IF [int->num_op = int-> 4]
 					%
-						ops[int->i] = char->'*'
+						ops[int->i] = char->'/'
 					$
 					ELSE
 					%
-						IF [int->num_op = int-> 4]
+						IF [int->num_op = int-> 5]
 						%
-							ops[int->i] = char->'/'
+							ops[int->i] = char->'^'
 						$
 						ELSE
 						%
-							IF [int->num_op = int-> 5]
-							%
-								ops[int->i] = char->'^'
-							$
-							ELSE
-							%
-								ops[int->i] = char->'m'
-							$
+							ops[int->i] = char->'m'
 						$
 					$
 				$
 			$
 		$
-	@@print the term
+	$
+		@@print the term
 	PRINT[int->nums[int->0]]
 	FOR[int->i
 		=int->0
 		[int->i < int->num_of_op]
 		+ -> 1]
-		%
-			PRINT[char->ops[int->i], int->nums[int->i + 1]]
-		$
+	%
+		PRINT[char->ops[int->i], int->nums[int->i + 1]]
+	$
 	PRINT[char->nl]
+	int->guess
+	PRINT[string->str(Your guess is)end, char->nl]
+	SCANF[int->guess]
 	int->result
 	=int-> CALL calc_rec[p:intp->nums p:string->ops]
 	PRINT[string->str(Result = )end, int->result, char->nl]
+	IF [int->guess = int->result]
+	%
+		PRINT[string->str(Your guess is correct!)end, char->nl]
+	$
+	ELSE
+	%
+		PRINT[string->str(Your guess is NOT correct.)end, char->nl]
+	$
 $
 FUNC calc_rec int [
 intp->nums
@@ -166,8 +240,8 @@ string->ops
 	IF [int->ops->SIZE = int->1]
 	%
 		return = int-> CALL calc_one[p:int->nums[int->0] p:char->ops[int->0] p:int->nums[int->1]]
-		PRINT[string->str(Last subterm: )end, int->nums[int->0], char->ops[int->0], int->nums[int->1], char->nl]
-		PRINT[string->str(= )end, int->return, char->nl]
+		PRINT[string->str(Last subterm: )end, int->nums[int->0], char->ops[int->0], int->nums[int->1]]
+		PRINT[string->str( = )end, int->return, char->nl]
 	$
 	ELSE
 	%
@@ -181,29 +255,29 @@ string->ops
 			=int->0
 			[int->j < int->prior->SIZE]
 			+ -> 1]
+		%
+			FOR[int->i
+				=int->0
+				[int->i < int->ops->SIZE]
+				+ -> 1]
 			%
-				FOR[int->i
-					=int->0
-					[int->i < int->ops->SIZE]
-					+ -> 1]
-					%
-						IF [char->ops[int->i] = char->prior[int->j]]
-						%
-							isFound = bool->TRUE
-							index_found = int->i
-							i = int->ops->SIZE
-						$
-					$
-				IF isFound
+				IF [char->ops[int->i] = char->prior[int->j]]
 				%
-					j = int->prior->SIZE
+					isFound = bool->TRUE
+					index_found = int->i
+					i = int->ops->SIZE
 				$
 			$
-		@@ the highest priority operation and numbers for it are found
-		PRINT[string->str(Subterm: )end, int->nums[int->index_found], char->ops[int->index_found], int->nums[int->index_found + 1], char->nl]
+			IF isFound
+			%
+				j = int->prior->SIZE
+			$
+		$
+			@@ the highest priority operation and numbers for it are found
+		PRINT[string->str(Subterm: )end, int->nums[int->index_found], char->ops[int->index_found], int->nums[int->index_found + 1]]
 		nums[int->index_found] = int-> CALL calc_one[p:int->nums[int->index_found] p:char->ops[int->index_found] p:int->nums[int->index_found + 1]]
-		PRINT[string->str(= )end, int->nums[int->index_found], char->nl]
-		@@ prepare newnums array with the calcalated variable
+		PRINT[string->str( = )end, int->nums[int->index_found], char->nl]
+			@@ prepare newnums array with the calcalated variable
 		intp->newnums->int->nums->SIZE - 1
 		FOR[int->i
 			=int->0
@@ -219,7 +293,7 @@ string->ops
 		%
 			newnums[int->i] = int->nums[int->i + 1]
 		$
-		@@ prepare newops array without used operation
+			@@ prepare newops array without used operation
 		string->newops
 		FOR[int->i
 			=int->0
@@ -291,8 +365,6 @@ int->num2
 $
 %
 	PRINT[string->str(START OF MAIN)end, char->nl]
-	int->abc
-	=int->999
-	CALL calculation_trainer []
+	CALL calculation_trainer[]
 	PRINT[string->str(END OF THE PROGRAMM)end, char->nl]
 $

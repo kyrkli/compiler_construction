@@ -2,16 +2,20 @@
 #include "stack.h"
 #include "ast.h"
 #include "exec.tab.h"
+char tmpstring[200];
 %}
 %option stack noyywrap noinput nounput yylineno
-%x COML COMB
+%x COML COMB STR
 COMLOPEN @@
 COMLCLOSE \n
 
 COMBOPEN @
 COMBCLOSE #\n
 
-STRING str\(.*\)end
+STRING (^(\)end))*
+STROP str[(]
+STRCL [)]end
+
 
 DIGIT09 [0-9]
 DIGIT19 [1-9]
@@ -34,15 +38,15 @@ HEXREAL hex->{HEX}.(0)*{HEX}
 DECREAL {DEC}.(0)*{DEC}
 
 %%
-{COMLOPEN} { printf("line comment is open\n"); yy_push_state(YYSTATE); BEGIN(COML);}
-{COMBOPEN} { printf("block comment is open\n"); yy_push_state(YYSTATE); BEGIN(COMB);}
+{COMLOPEN} { yy_push_state(YYSTATE); BEGIN(COML);}
+{COMBOPEN} { yy_push_state(YYSTATE); BEGIN(COMB);}
+{STROP} { yy_push_state(YYSTATE); BEGIN(STR); }
 
 {OCTALDEF} { yylval.svar.gval.int_val = strtoul(yytext+9, NULL, 8); 
 			yylval.svar.type = _int;
 			return num;}
 {DECDEF} { 	yylval.svar.gval.int_val = strtoul(yytext, NULL, 10); 
 			yylval.svar.type = _int;
-			printf("int = %d\n", yylval.svar.gval.int_val);
 			return num; }
 {HEXDEF} { 	yylval.svar.gval.int_val = strtoul(yytext+5, NULL, 16);
 			yylval.svar.type = _int; 
@@ -52,81 +56,73 @@ DECREAL {DEC}.(0)*{DEC}
 			yylval.svar.gval.double_val = strtod(yytext+3, NULL); 
 			yylval.svar.type = _double; 
 			return num;}
-{DECREAL} { printf("yytext = %s", yytext);
-			yylval.svar.gval.double_val = strtod(yytext, NULL); 
+{DECREAL} {	yylval.svar.gval.double_val = strtod(yytext, NULL); 
 			yylval.svar.type = _double;
-			printf("double = %f\n", yylval.svar.gval.double_val);
 			return num;}
-{STRING} {	char new_string[100];
-			//cut str( and )end
-			printf("string = %s\n", new_string);
-			strncpy(new_string, yytext + 4, strlen(yytext) - 8);
-			new_string[strlen(yytext) - 8] = '\0';  // Null-terminate the new string
-			yylval.svar.gval.charptr_val = strdup(new_string);
-			yylval.svar.type = _charptr;
-			return str;}	
-
 
 intp { yylval.type = _intptr; return type; }
 realp { yylval.type = _doubleptr; return type; }
 boolp { yylval.type = _boolptr; return type; }
 
+void { yylval.type = _void; return type; }
 char { yylval.type = _char; return type; }
 int { yylval.type = _int; return type; }
 real { yylval.type = _double; return type; }
 bool { yylval.type = _bool; return type; }
 string { yylval.type = _charptr; return type; }
 
-or { printf("or\n"); return or; }
-and { printf("and\n"); return and; }
-xor { printf("xor\n"); return xor; }
-not { printf("not\n"); return not; }
+or { return or; }
+and { return and; }
+xor { return xor; }
+not { return not; }
 
-mod { printf("mod\n"); return mod; }
+mod { return mod; }
 
-nl { printf("nl\n");
-	yylval.svar.type = _char; 
+nl { yylval.svar.type = _char; 
 	yylval.svar.gval.char_val = '\n';	
 	return nl; }
--> { printf("arrow\n"); return arrow; }
-p: { printf("p:\n"); return pp;}
-el: { printf("el:\n"); return el;}
+-> { return arrow; }
+p: { return pp;}
+el: { return el;}
+D { return d;}
+T { return t;}
 
-SIZE { printf("SIZE\n"); return size;}
-RANDOM { printf("RANDOM\n"); return _random;}
-SCANF { printf("SCANF\n"); return _scanf; }
-CALL { printf("CALL\n"); return call;}
-FUNC { printf("FUNC\n"); return func;}
-FOR { printf("FOR\n"); return _for; }
-PRINT { printf("PRINT\n"); return print;}
+SIZE { return size;}
+RANDOM { return _random;}
+SCANF { return _scanf; }
+CALL { return call;}
+FUNC { return func;}
+FOR { return _for; }
+PRINT { return print;}
 
-WHILE { printf("WHILE\n"); return _while; }
-IF { printf("IF\n"); return _if; }
-ELSE { printf("ELSE\n"); return _else; }
+WHILE { return _while; }
+IF { return _if; }
+ELSE { return _else; }
 
-TRUE  { printf("TRUE\n");
-		yylval.svar.type = _bool; 
+TRUE  { yylval.svar.type = _bool; 
 		yylval.svar.gval.int_val = 1;
 		return boolean;}
-FALSE { printf("FALSE\n"); 
-		yylval.svar.type = _bool; 
+FALSE { yylval.svar.type = _bool; 
 		yylval.svar.gval.int_val = 0;
 		return boolean;}
 
 {CH}  { yylval.svar.type = _char;
-		printf("Hello its char\n");
 		yylval.svar.gval.char_val = yytext[1]; 
 		return ch;}
 
-{ID} { yylval.svar.id = strdup(yytext); printf("id = %s\n", yytext); return id; }
-\n { yylval.str = strdup(yytext); printf("newline\n"); return newline;}
+{ID} { yylval.svar.id = strdup(yytext); return id; }
+\n { yylval.str = strdup(yytext); return newline;}
 
 (\t|\ )
 
-<COML>{COMLCLOSE} { printf("line comment is closed\n"); yy_pop_state();}
-<COMB>{COMBCLOSE} { printf("block comment is closed\n"); yy_pop_state();}
-<COML,COMB>\n { printf("newline in comments\n");}
-<COML,COMB>. { printf("char in comments = %c\n", *yytext);}
+<STR>{STRCL}  { yylval.svar.gval.charptr_val = strdup(tmpstring);
+				yylval.svar.type = _charptr;
+			   	yy_pop_state();
+				strcpy(tmpstring, "");
+				return str;}
+<STR>.  { strncat(tmpstring, &yytext[0], 1); }
+<COML>{COMLCLOSE} { yy_pop_state();}
+<COMB>{COMBCLOSE} { yy_pop_state();}
 
-. { printf("default = '%c'\n", *yytext); return *yytext; }
+. { return *yytext; }
 %%

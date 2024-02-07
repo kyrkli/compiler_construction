@@ -7,7 +7,6 @@
 #include "queue.h"
 
 #define MAX_DECLARED_FUNC 10
-//for keywords @$ = @1 etc with yylinenumber
 
 Queue qparam;
 Queue arr_el;
@@ -30,8 +29,6 @@ stackval_t execute_ast (astnode_t *root) {
 	if(root == NULL)
 		return (stackval_t) {};
 
-	//printf("\nstart of execute ast, node = %s,\t\tast_id = %d\n", node2str(root), root->id);
-	//print_gdata(root->val.svar);
 	stackval_t res;
 	switch (root->type) { 
 		case PROG:
@@ -71,7 +68,6 @@ stackval_t execute_ast (astnode_t *root) {
 		case BLOCK:
 			var_enter_block();
 			res = execute_ast(root->child[0]);
-			//var_dump();
 			var_leave_block();
 			return res;
 		case RANDOM:
@@ -85,10 +81,6 @@ stackval_t execute_ast (astnode_t *root) {
 			
 			runtime_error(min.gval.int_val < max.gval.int_val,
 						  "At the left side must be the min boundary, at the right side - max boundary\n");
-			/*
-			runtime_error(num1.gval.int_val >= 0 && num2.gval.int_val >= 0,
-						  "Random boundaries must be greater than 0\n");
-			*/
 			return (stackval_t) {.type = _int, .gval.int_val = rand() % (max.gval.int_val - min.gval.int_val + 1) + min.gval.int_val };
 		case SLOCAL:	
 			res = execute_ast(root->child[0]);
@@ -106,7 +98,9 @@ stackval_t execute_ast (astnode_t *root) {
 			if(run_func){
 				run_func = 0;
 				var_enter_function();	
-				var_declare_general_zero((stackval_t) {.id = "return", .type = root->val.svar.type}, 'l');
+				
+				if(root->val.svar.type != _void)
+					var_declare_general_zero((stackval_t) {.id = "return", .type = root->val.svar.type}, 'l');
 				
 				//assign the given parameters
 				execute_ast(root->child[0]);
@@ -117,7 +111,9 @@ stackval_t execute_ast (astnode_t *root) {
 				//run the function block
 				execute_ast(root->child[1]);
 				//get the return value
-				res = var_get("return");
+				if(root->val.svar.type != _void)
+					res = var_get("return");
+
 				var_leave_function();
 			}
 			return res;
@@ -324,9 +320,7 @@ stackval_t execute_ast (astnode_t *root) {
 		case FOR:
 			//start
 			var_enter_block();
-		//	var_dump();
 			stackval_t saved_start = execute_ast(root->child[0]); 
-		//	var_dump();
 			stackval_t inc = execute_ast(root->child[2]);
 			
 			for(stackval_t run = saved_start; execute_ast(root->child[1]).gval.int_val > 0; ){
@@ -359,7 +353,6 @@ stackval_t execute_ast (astnode_t *root) {
 			set_general_svar(newval, -1);
 			return newval;
 		case PRINT:
-			//var_dump();
 			//create queue for values
 			execute_ast(root->child[0]);
 			stackval_t print_val;
@@ -395,7 +388,6 @@ stackval_t execute_ast (astnode_t *root) {
 		case PRINTVALS:
 			execute_ast(root->child[0]);
 			stackval_t right_val = execute_ast(root->child[1]);
-			
 			enqueue(&qprint, right_val);
 			return right_val;
 		case PRINTVAL:
@@ -492,7 +484,7 @@ stackval_t execute_ast (astnode_t *root) {
 		case NOTEQ:
 			return compare(execute_ast(root->child[0]), '!', execute_ast(root->child[1]));
 		default: 
-			assert(1);
+			assert(0);
 	}
 	return (stackval_t) {};
 }

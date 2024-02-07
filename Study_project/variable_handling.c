@@ -66,7 +66,7 @@ void* var_declare_global (type_t type, char *id, void* gval, int size) {
 		case _doubleptr:
     		s_push(&globals, (stackval_t) { .type = type, .gval.doubleptr_val = (double *) gval, .size = size, .id = strdup(id) });
 			break;
-		default://TODO another types
+		default:
 			assert(0);
 			break;
 	}
@@ -81,7 +81,6 @@ void* var_declare (type_t type, char *id, void* gval, int size) {
     // Handle multiple declaration in same block
 	runtime_error(0, "The variable is already declared in the same block\n");	
   } else {
-	//TODO gval = strdup(gval) in case of pointer
   	switch(type){
 		case _char:
     		s_push(&vars, (stackval_t) { .type = type, .gval.char_val = *(char *) gval, .size = size, .id = strdup(id) });
@@ -111,7 +110,7 @@ void* var_declare (type_t type, char *id, void* gval, int size) {
 		case _doubleptr:
     		s_push(&vars, (stackval_t) { .type = type, .gval.doubleptr_val = (double *) gval, .size = size, .id = strdup(id) });
 			break;
-		default://TODO another types
+		default:
 			assert(0);
 			break;
 	}
@@ -237,7 +236,6 @@ void* var_set (char *id, void* gval, type_t expected_type, int index) {
   } else {
     // Handle usage of undeclared variable
 	printf("id of variable = %s\n", id);
-	var_dump();
 	runtime_error(0, "The used variable is NOT declared in the block\n");	
   }
 

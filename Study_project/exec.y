@@ -6,9 +6,6 @@
 #include <assert.h>
 #include <time.h>
 #include <stdlib.h>
-//static vars and globals
-//syntax errors via assert
-//
 
 extern int yylineno;
 void yyerror(const char *s) {
@@ -19,11 +16,6 @@ int yydebug = 0;
 
 %}
 %define parse.error verbose
-
-%code requires {
-	//#include "variable_handling.h"
-	//#include "stack.h"
-}
 
 %union {
 	type_t type;
@@ -43,7 +35,7 @@ int yydebug = 0;
 		<svar> str
 		<str> newline
 		<svar> nl
-%token and _random or xor not _if _else print _for size func call pp _scanf mod _while arrow el
+%token d t and _random or xor not _if _else print _for size func call pp _scanf mod _while arrow el
 
 %left or
 %left and
@@ -59,7 +51,7 @@ int yydebug = 0;
 //non-terminals
 %type <ast> S PROG GETRANDOM PRINTVALS BLOCK ARRDEF GETARR ARRAY LENGTH ELEMENTS GLVARDEF SETVAR BOOLTERM INC APARAM SCANF WHILE FUNCCALL FPARAM FUNCDEF STARTFOR FOR PRINT COND IF SCOMPARE COMPARE VARIABLE STERM TERM VARDEF LVARDEF GLOBAL LOCAL SLOCAL SLOCAL2
 %%
-S : PROG { execute_ast($1); var_dump(); printf("MAX AST ID = %d\n", ast_id); print_ast($1, 0); }
+S : PROG { execute_ast($1); print_ast($1, 0); }
 
 PROG : PROG GLOBAL { $$ = astnode_new(PROG);
 	 				 $$->child[0] = $1; $$->child[1] = $2; }
@@ -126,6 +118,7 @@ TERM: TERM '-' TERM   { $$ = astnode_new(MINUS);
 						$$->child[0] = $1; $$->child[1] = $3; }
 	| TERM mod TERM	  { $$ = astnode_new(MOD);
 						$$->child[0] = $1; $$->child[1] = $3; }
+	| '(' TERM ')' { $$ = $2; }
 	| num { $$ = astnode_new(NUM); $$->val.svar = $1; }
 	| id { $$ = astnode_new(GETIDVAL); $$->val.svar = $1; }
 	| ch { $$ = astnode_new(CHAR); $$->val.svar = $1; }
@@ -196,7 +189,12 @@ INC : '+' arrow num { $$ = astnode_new(INC);
 			  	$$->val.svar = $3; $$->val.svar.id = "*"; }
 	| '/' arrow num { $$ = astnode_new(INC); 
 			  	$$->val.svar = $3; $$->val.svar.id = "/"; }
-	| %empty { $$ = NULL;}
+	| %empty  { $$ = astnode_new(INC);
+				$$->val.svar.type = _int; $$->val.svar.gval.int_val = 1; $$->val.svar.id = "+";}
+	| d { $$ = astnode_new(INC);
+			$$->val.svar.type = _int; $$->val.svar.gval.int_val = 2; $$->val.svar.id = "*";}
+	| t { $$ = astnode_new(INC);
+			$$->val.svar.type = _int; $$->val.svar.gval.int_val = 3; $$->val.svar.id = "*";}
 
 SETVAR : id '=' STERM newline { $$ = astnode_new(SETVAR); 
 	   							$$->val.svar = $1; $$->child[0] = $3; }
@@ -236,11 +234,11 @@ ELEMENTS : ELEMENTS el STERM  { $$ = astnode_new(ELEMENTS);
 
 GETRANDOM : _random '[' STERM STERM ']' { $$ = astnode_new(GETRANDOM);
 										  $$->child[0] = $3; $$->child[1] = $4; }
+
 %%
 
 int main(){
 	srand(time(NULL));
 	int st = yyparse();
-	printf("Word is %i\n", st);
 	return st;
 }
